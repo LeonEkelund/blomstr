@@ -59,10 +59,27 @@ const primaryNav: NavItem[] = [
   { to: "/analytics", label: "Analytics", icon: BarChart3, soon: true },
 ]
 
+// Settings lives in the account menu instead, so it isn't duplicated here.
 const secondaryNav: NavItem[] = [
   { to: "/integrations", label: "Integrations", icon: Plug },
-  { to: "/settings", label: "Settings", icon: Settings },
 ]
+
+/**
+ * Rows sit flush against each other so there is no dead zone between them —
+ * a gap on the list would drop the pointer cursor and blink the highlight off
+ * as you move down. The visual separation instead comes from a transparent
+ * border plus `bg-clip-padding`, which stops the background painting under it.
+ */
+const navButton = [
+  "h-9 border-y-2 border-transparent bg-clip-padding group-data-[collapsible=icon]:border-y-0",
+  // Hover is a hint, active is state — so hover sits at half strength and the
+  // current page stays the most prominent row even while pointing elsewhere.
+  "hover:bg-sidebar-accent/50 data-active:hover:bg-sidebar-accent",
+  "text-sidebar-foreground/70 hover:text-sidebar-foreground data-active:text-sidebar-foreground",
+  // No weight change on active: it shifts the label by ~1px and reads as jitter
+  // when navigating. Background and text opacity carry the state instead.
+  "data-active:font-normal",
+].join(" ")
 
 function NavRows({ items, pathname }: { items: NavItem[]; pathname: string }) {
   return (
@@ -73,7 +90,11 @@ function NavRows({ items, pathname }: { items: NavItem[]; pathname: string }) {
         if (item.soon) {
           return (
             <SidebarMenuItem key={item.label}>
-              <SidebarMenuButton disabled tooltip={`${item.label} — coming soon`}>
+              <SidebarMenuButton
+                disabled
+                className={navButton}
+                tooltip={`${item.label} — coming soon`}
+              >
                 <Icon />
                 <span>{item.label}</span>
               </SidebarMenuButton>
@@ -86,6 +107,7 @@ function NavRows({ items, pathname }: { items: NavItem[]; pathname: string }) {
           <SidebarMenuItem key={item.label}>
             <SidebarMenuButton
               isActive={pathname.startsWith(item.to)}
+              className={navButton}
               tooltip={item.label}
               render={<Link to={item.to} />}
             >
@@ -137,11 +159,11 @@ function NavUser() {
               </DropdownMenuLabel>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem render={<Link to="/settings" />}>
               <CircleUser />
               Account
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem render={<Link to="/settings" />}>
               <Settings />
               Settings
             </DropdownMenuItem>
@@ -162,12 +184,13 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      {/* h-14 + border-b so this rule lines up exactly with the page header's. */}
       {/*
-        Constant px-3 in both states, deliberately: the collapsed rail is 48px
-        and the mark is 24px, so 12px of padding centres it without needing
-        `justify-center`. Centring instead would make the logo slide sideways
-        during the width transition.
+        h-14 + border-b so this rule lines up exactly with the page header's.
+
+        px-3 stays constant in both states, deliberately: the collapsed rail is
+        48px and the mark is 24px, so 12px of padding centres it without needing
+        `justify-center` — which would make the logo slide sideways during the
+        width transition.
       */}
       <SidebarHeader className="h-14 flex-row items-center gap-2 border-b px-3 py-0">
         <Logo className="size-6 shrink-0" />

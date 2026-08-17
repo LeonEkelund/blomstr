@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/dist", "!**/.turbo", "!pnpm-lock.yaml"]
+    "includes": ["**", "!**/dist", "!**/.turbo", "!pnpm-lock.yaml", "!**/*.svg"]
   },
   "formatter": {
     "enabled": true,
