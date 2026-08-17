@@ -1,17 +1,31 @@
+import { Logo } from "@blomstr/ui"
 import type { LucideIcon } from "lucide-react"
 import {
   BarChart3,
   CalendarDays,
+  ChevronsUpDown,
   CircleCheck,
+  CircleUser,
   Handshake,
   House,
   Lightbulb,
+  LogOut,
   Plug,
   Settings,
   SquareKanban,
   Users,
 } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Sidebar,
   SidebarContent,
@@ -24,6 +38,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { currentUser } from "@/lib/mock-data"
 
 interface NavItem {
   to: string
@@ -84,14 +99,78 @@ function NavRows({ items, pathname }: { items: NavItem[]; pathname: string }) {
   )
 }
 
+function NavUser() {
+  const initials = currentUser.name.slice(0, 2).toUpperCase()
+
+  return (
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <SidebarMenuButton size="lg" tooltip={currentUser.name}>
+                <Avatar className="size-8">
+                  <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+                </Avatar>
+                <div className="grid flex-1 text-left leading-tight">
+                  <span className="truncate text-sm font-medium">{currentUser.name}</span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    {currentUser.email}
+                  </span>
+                </div>
+                <ChevronsUpDown className="ml-auto size-4 text-muted-foreground" />
+              </SidebarMenuButton>
+            }
+          />
+          <DropdownMenuContent side="top" align="end" className="w-56">
+            {/* Base UI's Label is a *group* label — it throws unless wrapped. */}
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="font-normal">
+                <div className="grid leading-tight">
+                  <span className="text-sm font-medium text-foreground">
+                    {currentUser.name}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {currentUser.email}
+                  </span>
+                </div>
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <CircleUser />
+              Account
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Settings />
+              Settings
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <LogOut />
+              Log out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </SidebarMenuItem>
+    </SidebarMenu>
+  )
+}
+
 export function AppSidebar() {
   const { pathname } = useLocation()
 
   return (
     <Sidebar collapsible="icon">
       {/* h-14 + border-b so this rule lines up exactly with the page header's. */}
-      <SidebarHeader className="h-14 flex-row items-center gap-2 border-b px-3 py-0 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-        <div className="size-6 shrink-0 rounded-md bg-foreground" />
+      {/*
+        Constant px-3 in both states, deliberately: the collapsed rail is 48px
+        and the mark is 24px, so 12px of padding centres it without needing
+        `justify-center`. Centring instead would make the logo slide sideways
+        during the width transition.
+      */}
+      <SidebarHeader className="h-14 flex-row items-center gap-2 border-b px-3 py-0">
+        <Logo className="size-6 shrink-0" />
         <span className="truncate text-sm font-semibold tracking-tight group-data-[collapsible=icon]:hidden">
           blomstr
         </span>
@@ -107,6 +186,7 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <NavRows items={secondaryNav} pathname={pathname} />
+        <NavUser />
       </SidebarFooter>
     </Sidebar>
   )

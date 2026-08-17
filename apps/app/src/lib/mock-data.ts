@@ -18,6 +18,12 @@ export const members: Member[] = [
   { id: "u4", name: "Jonas", role: "guest" },
 ]
 
+/** Stands in for the signed-in user until auth exists. */
+export const currentUser = {
+  ...members[0],
+  email: "leon@blomstr.app",
+} as Member & { email: string }
+
 function item(
   partial: Partial<ContentItem> &
     Pick<ContentItem, "id" | "title" | "stageId" | "position">,
