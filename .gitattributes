@@ -1,0 +1,10 @@
+# Normalise line endings to LF in the repo, regardless of OS.
+# Without this, a Windows and a macOS machine produce diffs where every line
+# looks changed.
+* text=auto eol=lf
+
+pnpm-lock.yaml linguist-generated=true -diff
+*.woff2 binary
+*.png binary
+*.jpg binary
+*.ico binary

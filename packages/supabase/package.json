@@ -1,0 +1,19 @@
+{
+  "name": "@blomstr/supabase",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.58.0"
+  },
+  "devDependencies": {
+    "@blomstr/config": "workspace:*",
+    "typescript": "^5.8.3"
+  }
+}

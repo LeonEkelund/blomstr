@@ -1,0 +1,24 @@
+{
+  "name": "blomstr",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@11.5.3",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "typecheck": "turbo typecheck",
+    "clean": "turbo clean",
+    "format": "biome format --write .",
+    "lint": "biome lint .",
+    "check": "biome check --write .",
+    "check:ci": "biome ci ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.8",
+    "turbo": "^2.5.5",
+    "typescript": "^5.8.3"
+  }
+}
