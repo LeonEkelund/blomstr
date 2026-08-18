@@ -1,9 +1,24 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>blomstr</title>
+    <!--
+      Runs before first paint so a dark-theme user never sees a white flash
+      while React boots. Deliberately inline and dependency-free.
+      Keep the storage key in sync with theme-provider.tsx.
+    -->
+    <script>
+      try {
+        var stored = localStorage.getItem("blomstr-theme")
+        var dark =
+          stored === "dark" ||
+          (stored !== "light" && matchMedia("(prefers-color-scheme: dark)").matches)
+        document.documentElement.classList.toggle("dark", dark)
+        document.documentElement.style.colorScheme = dark ? "dark" : "light"
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

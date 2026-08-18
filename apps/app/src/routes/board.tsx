@@ -137,7 +137,9 @@ function Column({ column }: { column: BoardColumn }) {
           ref={setNodeRef}
           className={cn(
             "flex min-h-24 flex-1 flex-col gap-2 rounded-lg transition-colors",
-            isOver && "bg-muted/40",
+            // Tint off the foreground rather than a surface token, so it stays
+            // visible whatever the canvas underneath resolves to.
+            isOver && "bg-foreground/5",
           )}
         >
           {column.items.map((item) => (

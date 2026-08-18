@@ -10,12 +10,16 @@ import {
   House,
   Lightbulb,
   LogOut,
+  Monitor,
+  Moon,
   Plug,
   Settings,
   SquareKanban,
+  Sun,
   Users,
 } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
+import { type Theme, useTheme } from "@/components/theme-provider"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -23,6 +27,8 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -121,6 +127,35 @@ function NavRows({ items, pathname }: { items: NavItem[]; pathname: string }) {
   )
 }
 
+const themeOptions: { value: Theme; label: string; icon: LucideIcon }[] = [
+  { value: "light", label: "Light", icon: Sun },
+  { value: "dark", label: "Dark", icon: Moon },
+  { value: "system", label: "System", icon: Monitor },
+]
+
+function ThemeMenuGroup() {
+  const { theme, setTheme } = useTheme()
+
+  return (
+    <DropdownMenuGroup>
+      <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+        Theme
+      </DropdownMenuLabel>
+      <DropdownMenuRadioGroup
+        value={theme}
+        onValueChange={(value) => setTheme(value as Theme)}
+      >
+        {themeOptions.map(({ value, label, icon: Icon }) => (
+          <DropdownMenuRadioItem key={value} value={value}>
+            <Icon />
+            {label}
+          </DropdownMenuRadioItem>
+        ))}
+      </DropdownMenuRadioGroup>
+    </DropdownMenuGroup>
+  )
+}
+
 function NavUser() {
   const initials = currentUser.name.slice(0, 2).toUpperCase()
 
@@ -167,6 +202,8 @@ function NavUser() {
               <Settings />
               Settings
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <ThemeMenuGroup />
             <DropdownMenuSeparator />
             <DropdownMenuItem>
               <LogOut />
