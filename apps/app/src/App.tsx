@@ -3,6 +3,16 @@ import { AppSidebar } from "@/components/layout/app-sidebar"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { BoardPage } from "@/routes/board"
 import { PlaceholderPage } from "@/routes/placeholder"
+import { ProjectLayout } from "@/routes/project/project-layout"
+import {
+  FilesTab,
+  MindmapTab,
+  NotesTab,
+  OverviewTab,
+  PublishTab,
+  RepurposedTab,
+  ReviewTab,
+} from "@/routes/project/tabs"
 
 export function App() {
   return (
@@ -19,6 +29,16 @@ export function App() {
       >
         <Route path="/" element={<Navigate to="/projects" replace />} />
         <Route path="/projects" element={<BoardPage />} />
+        <Route path="/projects/:projectId" element={<ProjectLayout />}>
+          <Route index element={<Navigate to="overview" replace />} />
+          <Route path="overview" element={<OverviewTab />} />
+          <Route path="review" element={<ReviewTab />} />
+          <Route path="notes" element={<NotesTab />} />
+          <Route path="files" element={<FilesTab />} />
+          <Route path="repurposed" element={<RepurposedTab />} />
+          <Route path="mindmap" element={<MindmapTab />} />
+          <Route path="publish" element={<PublishTab />} />
+        </Route>
         <Route path="/home" element={<PlaceholderPage title="Home" />} />
         <Route path="/calendar" element={<PlaceholderPage title="Calendar" />} />
         <Route path="/tasks" element={<PlaceholderPage title="My Tasks" />} />

@@ -12,18 +12,20 @@ out, with a single approval pass.
 
 ## Status
 
-Early scaffold. The monorepo, the app shell and a static board exist. There is
+Early scaffold. The monorepo, the app shell and a working board exist. There is
 no backend yet — no Supabase project, no schema, no auth. The board renders
-from fixtures.
+from fixtures and moves are held in local state, so a refresh resets it.
 
 | Area | State |
 |---|---|
 | Monorepo, tooling, build | Done |
 | App shell — sidebar, routing, layout | Done |
-| Kanban board | Renders; drag-and-drop not wired |
+| Kanban board | Drag-and-drop wired; fixtures, not persisted |
+| Theming — light / dark / system | Done |
 | Supabase, schema, RLS | Not started |
 | Auth, teams, permissions | Not started |
 | Project workspace, review, publishing | Not started |
+| Mobile — board layout and touch drag | Not started |
 | `apps/landing`, `apps/admin` | Placeholder folders |
 
 ---
@@ -69,12 +71,16 @@ supabase/     migrations + Edge Functions (not initialised yet)
 ```
 src/
   App.tsx                    routes
-  main.tsx                   QueryClient, TooltipProvider, Router
-  components/layout/         app-layout, app-sidebar
+  main.tsx                   Theme, QueryClient, Tooltip, Router
+  components/theme-provider  light / dark / system, persisted
+  components/layout/         page-header, app-sidebar
   components/ui/             shadcn components
+  hooks/use-board.ts         board state + the move mutation
+  hooks/use-mobile.ts        breakpoint hook used by the sidebar
   routes/board.tsx           the Kanban
   routes/placeholder.tsx     stub for unbuilt pages
   lib/mock-data.ts           fixtures — delete once Supabase lands
+  lib/rank.ts                fractional indexing for board order
   lib/supabase.ts            client; throws if env vars are missing
 ```
 
@@ -200,6 +206,11 @@ Storage.
 - The `service_role` key bypasses all RLS — it never touches a client bundle,
   and `apps/admin` needs its own authorization layer.
 - Board ordering uses fractional indexing, so a reorder touches one row.
+  `lib/rank.ts` mints the keys; two items in a column must never share one, or
+  a drop between them has no gap to land in.
+- Default stages stay medium-agnostic — Ideas, In progress, Review, Published.
+  A podcaster or photographer should not be reading a YouTube pipeline.
+  Workflow is per-workspace, so these are a starting template, not a fixed set.
 
 ---
 
@@ -220,8 +231,42 @@ dependencies.
 
 ## Next
 
-1. Wire dnd-kit into the board — drag between columns, optimistic updates
-2. `supabase init`, then the content graph migration
-3. Auth and workspace membership
-4. The permission function, with tests
-5. Project workspace page
+1. `supabase init`, then the content graph migration
+2. Auth and workspace membership
+3. The permission function, with tests
+4. Project workspace page — `/projects/:id`
+
+The board is a **view**, not a container: projects are created into a stage and
+the board groups by `stage_id`, so there is no separate "add to board" step and
+no project that exists off the board. Calendar is the same items grouped by
+`publish_at`. Clicking a card opens `/projects/:id` as a real route — it has to
+be linkable, since the whole point is sending it to whoever made the thing.
+
+> ⚠️ `ContentItem.approvalState` currently sits on the item, which contradicts
+> [approval living on the version](#approval-lives-on-the-version-never-the-project).
+> It exists so the board can render a badge from fixtures. Resolve it when the
+> schema lands, before the project page depends on either shape.
+
+### Decided, not yet built
+
+The project workspace at `/projects/:id` is a shell — routing, header, rail and
+empty states. Nothing on it writes. These decisions were made while designing
+it and need to survive until the schema exists:
+
+- **`approvalState` becomes derived.** Read from the latest version, never
+  written by a client. The board keeps a cheap badge; the version keeps the
+  truth.
+- **Self-authored work skips review.** If the author already holds approve
+  rights — a creator writing their own script — it is approved by construction.
+  Otherwise the approval inbox fills with people approving themselves.
+- **The script is an asset, not a field.** It gets approved, so it needs
+  versions and comments like any other deliverable. Notes stay plain fields;
+  nobody approves a note.
+- **Derivatives get their own pages.** Same route, same shape, `parentId` set —
+  a clipper's work has to be reviewable too.
+- **Overview is always the landing tab.** A default that moves with the
+  project's state cannot be learned. It carries status in a sentence, the next
+  action, recent activity and counts that link out — not a statistics
+  dashboard, and not a copy of the rail.
+- **Mindmap is per-project**, Excalidraw (MIT), single-player first. Scene in
+  `jsonb`, images to Storage rather than inlined as base64.

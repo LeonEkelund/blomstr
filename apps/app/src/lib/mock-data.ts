@@ -2,13 +2,17 @@ import type { ContentItem, Member, Stage } from "@blomstr/types"
 
 /** Temporary fixtures so the board renders before Supabase exists. */
 
+/**
+ * The default workflow. Deliberately medium-agnostic — "In progress" covers
+ * writing, shooting, recording and editing alike, so a podcaster or
+ * photographer isn't reading someone else's pipeline. Workspaces can add their
+ * own stages on top of this.
+ */
 export const stages: Stage[] = [
-  { id: "idea", name: "Idea", position: 0 },
-  { id: "script", name: "Script", position: 1 },
-  { id: "record", name: "Record", position: 2 },
-  { id: "edit", name: "Editing", position: 3 },
-  { id: "review", name: "Review", position: 4 },
-  { id: "scheduled", name: "Scheduled", position: 5 },
+  { id: "ideas", name: "Ideas", position: 0 },
+  { id: "in_progress", name: "In progress", position: 1 },
+  { id: "review", name: "Review", position: 2 },
+  { id: "published", name: "Published", position: 3 },
 ]
 
 export const members: Member[] = [
@@ -47,8 +51,8 @@ export const contentItems: ContentItem[] = [
   item({
     id: "c1",
     title: "I Tried AI for 30 Days",
-    stageId: "edit",
-    position: "a0",
+    stageId: "in_progress",
+    position: "a2",
     type: "youtube_video",
     platforms: ["youtube"],
     assigneeIds: ["u2"],
@@ -57,7 +61,7 @@ export const contentItems: ContentItem[] = [
   item({
     id: "c2",
     title: "Studio tour + gear breakdown",
-    stageId: "script",
+    stageId: "in_progress",
     position: "a0",
     platforms: ["youtube"],
     assigneeIds: ["u1"],
@@ -77,15 +81,15 @@ export const contentItems: ContentItem[] = [
   item({
     id: "c4",
     title: "Reacting to my old videos",
-    stageId: "idea",
+    stageId: "ideas",
     position: "a0",
     platforms: ["youtube"],
   }),
   item({
     id: "c5",
     title: "Desk setup — 3 clips",
-    stageId: "edit",
-    position: "a1",
+    stageId: "in_progress",
+    position: "a3",
     type: "tiktok",
     platforms: ["tiktok", "instagram"],
     assigneeIds: ["u4"],
@@ -94,8 +98,8 @@ export const contentItems: ContentItem[] = [
   item({
     id: "c6",
     title: "Podcast ep. 14 — guest recording",
-    stageId: "record",
-    position: "a0",
+    stageId: "in_progress",
+    position: "a1",
     type: "podcast",
     assigneeIds: ["u1"],
     dueAt: "2026-08-20T00:00:00Z",
@@ -112,17 +116,19 @@ export const contentItems: ContentItem[] = [
   item({
     id: "c8",
     title: "Back to school haul",
-    stageId: "scheduled",
+    stageId: "published",
     position: "a0",
     type: "reel",
     platforms: ["instagram"],
     assigneeIds: ["u3"],
-    publishAt: "2026-08-21T15:00:00Z",
+    approvalState: "approved",
+    // In the past, so the card reads as genuinely out rather than queued.
+    publishAt: "2026-08-15T15:00:00Z",
   }),
   item({
     id: "c9",
     title: "Q4 collab ideas",
-    stageId: "idea",
+    stageId: "ideas",
     position: "a1",
     type: "youtube_video",
   }),

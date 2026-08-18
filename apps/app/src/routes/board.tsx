@@ -20,41 +20,20 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import { Link } from "react-router-dom"
 import { PageHeader } from "@/components/layout/page-header"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { type BoardColumn, useBoard } from "@/hooks/use-board"
+import { formatDate, initials, publishLabel, typeLabels } from "@/lib/content"
 import { members } from "@/lib/mock-data"
 import { cn } from "@/lib/utils"
-
-const typeLabels: Record<ContentItem["type"], string> = {
-  youtube_video: "YouTube",
-  short: "Short",
-  tiktok: "TikTok",
-  reel: "Reel",
-  instagram_post: "Instagram",
-  podcast: "Podcast",
-  livestream: "Live",
-  newsletter: "Newsletter",
-  thumbnail: "Thumbnail",
-  sponsored: "Sponsored",
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-  })
-}
-
-function initials(name: string) {
-  return name.slice(0, 2).toUpperCase()
-}
 
 function Card({ item, overlay }: { item: ContentItem; overlay?: boolean }) {
   const assignees = members.filter((m) => item.assigneeIds.includes(m.id))
   const date = item.publishAt ?? item.dueAt
+  const dateLabel = publishLabel(item.publishAt)
 
   return (
     <article
@@ -89,7 +68,7 @@ function Card({ item, overlay }: { item: ContentItem; overlay?: boolean }) {
         </div>
         {date && (
           <span className="text-xs text-muted-foreground">
-            {item.publishAt ? "Publishes " : ""}
+            {dateLabel}
             {formatDate(date)}
           </span>
         )}
@@ -104,16 +83,43 @@ function SortableCard({ item }: { item: ContentItem }) {
       id: item.id,
     })
 
+  // A drag ends with a click on the card, which would navigate away the moment
+  // you drop something. Remember that a drag happened and swallow that click.
+  const dragged = useRef(false)
+  useEffect(() => {
+    if (isDragging) dragged.current = true
+  }, [isDragging])
+
   return (
     <div
       ref={setNodeRef}
       // Translate only — scaling the card would distort its text mid-drag.
       style={{ transform: CSS.Translate.toString(transform), transition }}
-      className={cn("touch-none", isDragging && "opacity-40")}
+      className={cn("relative touch-none", isDragging && "opacity-40")}
       {...attributes}
       {...listeners}
     >
       <Card item={item} />
+      {/*
+        A real link rather than a click handler on the wrapper: dnd-kit already
+        owns Enter and Space there for lifting the card, so the navigation needs
+        its own focusable target to stay keyboard-reachable. `draggable={false}`
+        stops the browser's native link dragging from fighting the sensor.
+      */}
+      <Link
+        to={`/projects/${item.id}`}
+        aria-label={item.title}
+        draggable={false}
+        onClick={(event) => {
+          // A drag finishes with a click. Swallow that one, or dropping a card
+          // would navigate away from the board.
+          if (dragged.current) {
+            dragged.current = false
+            event.preventDefault()
+          }
+        }}
+        className="absolute inset-0 rounded-lg outline-offset-2 focus-visible:outline-2 focus-visible:outline-ring"
+      />
     </div>
   )
 }
