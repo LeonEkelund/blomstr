@@ -4,6 +4,10 @@ build/
 .turbo/
 *.tsbuildinfo
 
+# this repo is pnpm — other package managers' lockfiles are a mistake
+package-lock.json
+yarn.lock
+
 # env
 .env
 .env.*
