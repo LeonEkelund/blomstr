@@ -22,7 +22,13 @@ export type Platform = "youtube" | "tiktok" | "instagram" | "x" | "linkedin"
 
 export type ApprovalState = "draft" | "in_review" | "changes_requested" | "approved"
 
-export type WorkspaceRole = "owner" | "member" | "guest"
+/**
+ * Descending trust. `owner` is the creator; `admin` is an assistant who can
+ * approve and publish but not change the team; `editor` covers editor, clipper
+ * and designer — they make the work and submit it, they don't sign it off;
+ * `guest` sees only the projects they were granted.
+ */
+export type WorkspaceRole = "owner" | "admin" | "editor" | "guest"
 
 export interface Member {
   id: string

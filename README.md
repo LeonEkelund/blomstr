@@ -270,3 +270,71 @@ it and need to survive until the schema exists:
   dashboard, and not a copy of the rail.
 - **Mindmap is per-project**, Excalidraw (MIT), single-player first. Scene in
   `jsonb`, images to Storage rather than inlined as base64.
+
+### Access
+
+Four tiers. Two scopes — staff see the workspace, guests see only what they
+were granted — and everything else is a consequence of the role.
+
+| | Owner | Admin | Editor | Guest |
+|---|:--:|:--:|:--:|:--:|
+| See the whole workspace | ✅ | ✅ | ✅ | granted projects |
+| Make and submit work | ✅ | ✅ | ✅ | ❌ |
+| Comment | ✅ | ✅ | ✅ | ✅ on their projects |
+| Approve, publish, invite guests | ✅ | ✅ | ❌ | ❌ |
+| Add/remove people, change roles | ✅ | ❌ | ❌ | ❌ |
+
+- **Editor covers editor, clipper and designer.** They make things and submit
+  them; that is the only distinction worth a role.
+- **Editors cannot approve their own work.** *"The team produces and the
+  creator approves"* is the product — an editor with approve rights ends it.
+  Note that granting approve also makes that person's own uploads skip review,
+  via the self-authored rule.
+- **Admin is the assistant.** Trusted with the audience and with sign-off,
+  cannot widen the circle or promote themselves.
+- **Capabilities derive from the role, never stored alongside it.** Two columns
+  that must agree is a drift bug. Add a nullable override if a real case
+  appears; not before.
+- **Guests hold a `workspace_members` row**, so any check meaning "has a row
+  here" hands a sponsor the whole account. `is_staff` is the boundary, and
+  every write policy uses it.
+
+Roles are the only editable thing. The Team page shows each person's
+permissions read-only, derived from their tier, with the tier as a dropdown for
+the owner.
+
+### Getting in
+
+- **Sign up → name the workspace → empty board.** `create_workspace` is
+  `security definer` because you cannot insert a workspace you are not yet a
+  member of.
+- **Google OAuth first**, email/password as fallback. Every creator has a
+  Google account and file storage is Drive — one identity rather than two.
+  Signing in with Google does not itself grant Drive scopes; that consent comes
+  later.
+- **Signup is open.** Gating it protects nothing — costs are Postgres rows
+  until people actually collaborate. Abuse concerns attach to *publishing*, so
+  gate that instead.
+- **A user with no workspace is a normal state, not an edge case.** A sponsor
+  redeeming a guest link owns nothing and must never see "name your workspace".
+  Guests will likely outnumber owners.
+- **Invites are copy-links, not emails.** Email means SMTP, deliverability,
+  templates and spam-folder support. Creators already live in Discord and
+  WhatsApp. Add email when it earns its cost.
+- **The role is baked into the invite**, never chosen on redemption —
+  otherwise forwarding a link is privilege escalation.
+
+### Money
+
+**Guests are free and unlimited; staff are the meter.** A sponsor who comments
+once cannot cost a seat, or creators stop inviting sponsors — and that is the
+feature the product exists for. `seat_limit` counts owner + admin + editor.
+
+The paywall lands when a creator adds their first editor, which is also when
+they are already paying that editor and the coordination is worth money.
+Storage is the wrong meter: files live in Drive by reference, so we do not
+carry the cost.
+
+> The principle is settled. The **number** — free tier at one seat — is a guess
+> from comparable tools, not from this market. Change it freely; do not change
+> the principle.

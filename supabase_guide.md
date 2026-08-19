@@ -19,7 +19,7 @@ than at step 11.
 - [ ] 0. Docker Desktop installed and running
 - [ ] 1. `supabase init` + `supabase start`, `.env` filled in
 - [ ] 2. `01_enums`
-- [ ] 3. `02_workspaces` + `is_member`
+- [ ] 3. `02_workspaces` + `profiles` + `is_staff`
 - [ ] 4. `03_stages` + default seed
 - [ ] 5. `04_content_graph` + ancestor trigger
 - [ ] 6. `05_assets_versions` + status view
@@ -28,11 +28,135 @@ than at step 11.
 - [ ] 9. `08_jobs`
 - [ ] 10. `09_guest_grants` + `can_read_item`
 - [ ] 11. `10_rls` — every table at once
-- [ ] 12. `11_rpc` — approval, publish, invites
-- [ ] 13. Seed a workspace and sign in
-- [ ] 14. Generate types
-- [ ] 15. Swap `ContentProvider` off fixtures
-- [ ] 16. Delete `mock-data.ts`
+- [ ] 12. `11_publish_targets`
+- [ ] 13. `12_invites` — guest links
+- [ ] 14. `13_rpc` — approval, publish, invites
+- [ ] 15. `14_storage` — buckets and their policies
+- [ ] 16. `15_realtime` — publication config
+- [ ] 17. `16_scheduling` — pg_cron and the job runner
+- [ ] 18. Tests — pgTAP, `can_read_item` first
+- [ ] 19. Seed a workspace and sign in
+- [ ] 20. Generate types
+- [ ] 21. Swap `ContentProvider` off fixtures
+- [ ] 22. Delete `mock-data.ts`
+
+---
+
+## Decisions taken
+
+Questions the schema couldn't answer on its own. Each is settled below so the
+migrations have something concrete to implement. All are reversible — the
+reasoning is here so a future you can disagree on purpose rather than by
+accident.
+
+### Roles
+
+Four tiers. Two scopes — staff see the workspace, guests see only what they
+were granted — and the rest is capability.
+
+| | Owner | Admin | Editor | Guest |
+|---|:--:|:--:|:--:|:--:|
+| See the whole workspace | ✅ | ✅ | ✅ | granted projects only |
+| Create / edit / move projects | ✅ | ✅ | ✅ | ❌ |
+| Upload versions, submit for review | ✅ | ✅ | ✅ | ❌ |
+| Comment | ✅ | ✅ | ✅ | ✅ on their projects |
+| **Approve / request changes** | ✅ | ✅ | ❌ | ❌ |
+| **Publish to the real audience** | ✅ | ✅ | ❌ | ❌ |
+| Invite a guest to a project | ✅ | ✅ | ❌ | ❌ |
+| Edit the workflow (stages) | ✅ | ✅ | ❌ | ❌ |
+| Delete projects | ✅ | ✅ | ❌ | ❌ |
+| **Add/remove people, change roles** | ✅ | ❌ | ❌ | ❌ |
+| Billing, delete workspace | ✅ | ❌ | ❌ | ❌ |
+
+**Editor covers editor, clipper and thumbnail designer.** They all make things
+and submit them; that is the only distinction that matters, and splitting them
+would multiply policies for no gain.
+
+**Editors cannot approve their own work.** The product's premise is *"the team
+produces and the creator approves"*. An editor with approve rights collapses
+it.
+
+**Admin is the assistant or manager.** Trusted with the audience and with
+editorial sign-off; cannot widen the circle or promote themselves. That last
+line is what separates admin from owner.
+
+**Capabilities are derived from the role, not stored.** Two columns that must
+agree is a drift bug waiting to happen. If one specific editor ever needs
+publish rights, add a nullable override then — `null` meaning "use the role
+default". Not before.
+
+> **Owner is per-workspace.** A *platform* admin — you, looking across every
+> customer — is a different thing entirely: that is `apps/admin` with
+> `service_role`, outside RLS. Never let one word cover both, or somebody will
+> eventually grant the wrong one.
+
+### Seats
+
+**Guests are free and unlimited. Staff are the meter.** A sponsor who redeems a
+link, comments once and never returns must not consume a paid seat — otherwise
+creators learn to avoid inviting sponsors, and that is the feature the product
+is built around. `workspaces.seat_limit` counts owner + admin + editor only,
+and `create_invite` enforces it including outstanding invites.
+
+`is_staff` already draws exactly this line, which is convenient but not an
+accident: it is the same question as "does this person cost anything".
+
+> The **principle** — guests free, staff metered — is settled and expensive to
+> reverse. The **number** (`seat_limit` defaults to 1) is an assumption drawn
+> from comparable tools, not from this market. Change it freely.
+
+Roles are the only editable thing; capabilities are read-only consequences of
+them. Changing a tier goes through `set_member_role`, which refuses to remove
+the last owner and clears grants on demotion to guest.
+
+**A thumbnail is both, and the distinction is work vs file.** Making a
+thumbnail is a job someone does and someone approves, so it is a derivative
+`content_item` with `parent_id` set to the video. The image itself is an
+`asset` of that item, with versions. The Publish tab then points at the
+approved asset. This keeps the existing fixture — *"Thumbnail A/B — AI video"* —
+valid, and it means the designer's work is tracked and reviewable like anyone
+else's.
+
+**A user belongs to many workspaces.** `workspace_members` is already
+many-to-many; an editor working for three creators is three memberships. The
+app resolves a current workspace and persists the choice. No schema change —
+just don't build anything that assumes one.
+
+**Staff and guest are the only two scopes — and `is_staff` is what enforces
+it.** Redeeming an invite gives a guest a `workspace_members` row, so any check
+shaped like *"does this person have a row in this workspace"* would hand a
+sponsor the run of the account: every comment, every project, write access to
+all of it. Guests are **in** the workspace; they are not **staff**.
+
+Every write policy checks `is_staff`. Guest-visible reads are scoped to the
+subject via `can_read_item` / `can_read_subject`, never to the workspace.
+`in_workspace` exists for exactly one thing — reading the workspace's name, so
+a guest's single project has a heading.
+
+A freelancer accumulating many grants is fine: it's an indexed array lookup,
+not a join per grant. If they're around permanently, make them an editor.
+
+**The script autosaves to a draft, and versions are deliberate.** Autosave
+writes `assets.draft_body`; "send for review" snapshots that into a new
+`asset_versions` row. A version per keystroke would make the review thread
+meaningless, and `asset_versions` has no update policy by design.
+
+**A clipper's work lives in *My Tasks*, not on the board.** The board is
+`parent_id is null`, so a clip — which always has a parent — never appears on
+it. That means the person whose whole job is clips currently has nowhere to
+work. No schema change is needed: `content_item_assignees` already answers
+"what is assigned to me" with an indexed lookup, across every depth of the
+tree. But the `/tasks` route is still a placeholder, and it has to exist before
+anyone but the creator can use the product.
+
+```sql
+-- What My Tasks queries.
+select c.*
+  from public.content_items c
+  join public.content_item_assignees a on a.content_item_id = c.id
+ where a.user_id = (select auth.uid())
+ order by c.due_at nulls last;
+```
 
 ---
 
@@ -67,7 +191,7 @@ pnpm dlx supabase --version    # 2.114.0 at time of writing
 From the repo root:
 
 ```powershell
-cd C:\Users\Leon\Documents\blomstr
+cd C:\Users\leonh\blomstr
 pnpm dlx supabase init
 ```
 
@@ -163,7 +287,19 @@ create type public.approval_state as enum (
   'draft','in_review','changes_requested','approved'
 );
 
-create type public.workspace_role as enum ('owner','member','guest');
+/*
+  Four tiers, in descending order of trust. See "Roles" in Decisions taken for
+  the full matrix.
+
+    owner   the creator — everything, including people and billing
+    admin   assistant or manager — approves and publishes, cannot grant access
+    editor  editor, clipper, designer — makes the work, cannot approve it
+    guest   sponsor or collaborator — one project, read and comment
+
+  There is no separate clipper or designer role. They all make things and
+  submit them for approval, which is the only distinction that matters.
+*/
+create type public.workspace_role as enum ('owner','admin','editor','guest');
 
 create type public.job_status as enum ('queued','leased','done','failed','dead');
 ```
@@ -190,20 +326,72 @@ pnpm dlx supabase migration new 02_workspaces
 create table public.workspaces (
   id          uuid primary key default gen_random_uuid(),
   name        text not null,
+  /*
+    Billing plumbing, in early and unenforced beyond the seat check in
+    create_invite. Adding it now means switching billing on is "add Stripe",
+    not "rewrite the invite path".
+
+    seat_limit counts STAFF only — owner, admin, editor. Guests are always
+    free and always unlimited. See "Seats" in Decisions taken; that split is
+    structural and expensive to reverse.
+  */
+  plan        text not null default 'free',
+  seat_limit  int  not null default 1,
   created_at  timestamptz not null default now()
 );
 
 create table public.workspace_members (
   workspace_id uuid not null references public.workspaces on delete cascade,
   user_id      uuid not null references auth.users on delete cascade,
-  role         public.workspace_role not null default 'member',
-  can_publish  boolean not null default false,
+  role         public.workspace_role not null default 'editor',
   created_at   timestamptz not null default now(),
   primary key (workspace_id, user_id)
 );
 
+/*
+  Capabilities are derived from the role, not stored alongside it. Two columns
+  that must agree is a drift bug waiting to happen, and with admin defined as
+  "approves and publishes" a flag buys nothing.
+
+  If one specific editor ever needs publish rights, add a nullable override
+  column then — null meaning "use the role default". Not before.
+*/
+
 -- "which workspaces am I in" is the hot path on every page load.
 create index on public.workspace_members (user_id);
+
+/*
+  auth.users is not readable from the client, so without this table the board
+  cannot render a name or an avatar. Mirrored on signup by the trigger below.
+*/
+create table public.profiles (
+  id           uuid primary key references auth.users on delete cascade,
+  display_name text,
+  avatar_url   text,
+  created_at   timestamptz not null default now()
+);
+
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  insert into public.profiles (id, display_name, avatar_url)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
+    new.raw_user_meta_data->>'avatar_url'
+  )
+  on conflict (id) do nothing;
+  return new;
+end;
+$$;
+
+create trigger on_auth_user_created
+after insert on auth.users
+for each row execute function public.handle_new_user();
 
 /*
   The foundation of every policy.
@@ -214,8 +402,34 @@ create index on public.workspace_members (user_id);
 
   (select auth.uid()) rather than auth.uid() so Postgres treats it as an
   InitPlan and evaluates it once per query instead of once per row.
+
+  ⚠️ is_staff, NOT "is in this workspace". Redeeming an invite gives a guest a
+  workspace_members row, so a naive "has a row here" check would hand a sponsor
+  the run of the whole workspace — every comment on every project. Guests are
+  in the workspace; they are not staff. Every write policy checks this one.
 */
-create or replace function public.is_member(ws uuid)
+create or replace function public.is_staff(ws uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.workspace_members m
+    where m.workspace_id = ws
+      and m.user_id = (select auth.uid())
+      and m.role in ('owner','admin','editor')
+  );
+$$;
+
+/*
+  Attached to the workspace at all, guests included. Only for things a guest
+  legitimately needs — the workspace's own name, so their one project has a
+  heading. Never for writes.
+*/
+create or replace function public.in_workspace(ws uuid)
 returns boolean
 language sql
 stable
@@ -245,12 +459,68 @@ as $$
       and m.role = any (roles)
   );
 $$;
+
+/*
+  Editors make the work; they do not sign it off. The product's whole premise
+  is "the team produces and the creator approves" — an editor who could approve
+  their own upload would collapse that.
+*/
+create or replace function public.can_approve(ws uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select public.has_role(ws, array['owner','admin']::public.workspace_role[]);
+$$;
+
+-- Posting to a real audience is irreversible. Same trust line as approval.
+create or replace function public.can_publish(ws uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select public.has_role(ws, array['owner','admin']::public.workspace_role[]);
+$$;
+
+/*
+  Changing who is on the team, and what they may do, is owner-only. This is the
+  line between owner and admin: an admin is trusted with the audience and with
+  editorial sign-off, but cannot widen the circle or promote themselves.
+*/
+create or replace function public.can_manage_people(ws uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select public.has_role(ws, array['owner']::public.workspace_role[]);
+$$;
+
+/*
+  Inviting a guest to a single project is narrower than changing the team, so
+  admins can do it — a manager sending a sponsor a review link shouldn't need
+  the creator. Editors cannot: handing out access is not part of making things.
+*/
+create or replace function public.can_invite_guests(ws uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select public.has_role(ws, array['owner','admin']::public.workspace_role[]);
+$$;
 ```
 
 **Verify:**
 
 ```sql
-select public.is_member(gen_random_uuid());   -- false, and no error
+select public.is_staff(gen_random_uuid());   -- false, and no error
 ```
 
 ---
@@ -296,7 +566,7 @@ $$;
 
 /*
   Bootstrap problem: creating a workspace requires inserting a row you are not
-  yet a member of, so no RLS policy written in terms of is_member() can allow
+  yet a member of, so no RLS policy written in terms of is_staff() can allow
   it. This function is the only way in — it creates the workspace, makes the
   caller its owner, and seeds the stages, atomically.
 */
@@ -316,8 +586,8 @@ begin
 
   insert into public.workspaces (name) values (name) returning id into ws;
 
-  insert into public.workspace_members (workspace_id, user_id, role, can_publish)
-  values (ws, uid, 'owner', true);
+  insert into public.workspace_members (workspace_id, user_id, role)
+  values (ws, uid, 'owner');
 
   perform public.seed_default_stages(ws);
 
@@ -510,7 +780,15 @@ create table public.assets (
   content_item_id uuid not null references public.content_items on delete cascade,
   kind            text not null check (kind in ('drive_file','storage_object','document')),
   title           text not null,
-  created_at      timestamptz not null default now()
+  /*
+    Autosave target for kind = 'document' (the script). Typing writes here;
+    "send for review" snapshots it into a new asset_versions row. A version per
+    keystroke would make the review thread meaningless, and asset_versions has
+    no update policy by design.
+  */
+  draft_body      text,
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now()
 );
 
 create index on public.assets (content_item_id);
@@ -725,7 +1003,7 @@ security definer
 set search_path = ''
 as $$
   select
-    public.is_member(item.workspace_id)
+    public.is_staff(item.workspace_id)
     or exists (
       select 1
         from public.guest_grants g
@@ -763,6 +1041,7 @@ off is readable by anyone with the anon key.
 ```sql
 alter table public.workspaces             enable row level security;
 alter table public.workspace_members      enable row level security;
+alter table public.profiles               enable row level security;
 alter table public.stages                 enable row level security;
 alter table public.content_items          enable row level security;
 alter table public.content_item_assignees enable row level security;
@@ -773,32 +1052,62 @@ alter table public.events                 enable row level security;
 alter table public.jobs                   enable row level security;
 alter table public.guest_grants           enable row level security;
 
+/*
+  Every write below checks is_staff, never in_workspace. A guest holds a
+  workspace_members row, so "has a row here" would let a sponsor edit the whole
+  workspace. in_workspace appears exactly once — on reading the workspace name.
+*/
+
 -- workspaces: no insert policy — creation goes through create_workspace().
+-- Guests need the name so their one project has a heading, nothing more.
 create policy read_workspaces on public.workspaces
-  for select using (public.is_member(id));
+  for select using (public.in_workspace(id));
 create policy update_workspaces on public.workspaces
   for update using (public.has_role(id, array['owner']::public.workspace_role[]));
 
--- membership: you can see your workspace's roster; only owners change it.
+-- Staff see the roster; only the owner changes it. Guests see nobody —
+-- a sponsor has no business enumerating your team.
 create policy read_members on public.workspace_members
-  for select using (public.is_member(workspace_id));
+  for select using (public.is_staff(workspace_id));
 create policy manage_members on public.workspace_members
-  for all using (public.has_role(workspace_id, array['owner']::public.workspace_role[]));
+  for all using (public.can_manage_people(workspace_id));
 
+/*
+  You can see the profile of anyone you share a workspace with — that is what
+  puts a name on a card. Not "any authenticated user", which would turn the
+  table into a directory of every account on the platform.
+*/
+create policy read_profiles on public.profiles
+  for select using (
+    id = (select auth.uid())
+    or exists (
+      select 1
+        from public.workspace_members mine
+        join public.workspace_members theirs
+          on theirs.workspace_id = mine.workspace_id
+       where mine.user_id = (select auth.uid())
+         and theirs.user_id = profiles.id
+    )
+  );
+
+create policy update_own_profile on public.profiles
+  for update using (id = (select auth.uid()));
+
+-- Guests need stage names to read a status; changing the workflow is admin+.
 create policy read_stages on public.stages
-  for select using (public.is_member(workspace_id));
+  for select using (public.in_workspace(workspace_id));
 create policy write_stages on public.stages
-  for all using (public.has_role(workspace_id, array['owner','member']::public.workspace_role[]));
+  for all using (public.has_role(workspace_id, array['owner','admin']::public.workspace_role[]));
 
--- content: guests read through the grant cascade, members write.
+-- content: guests read through the grant cascade, staff write.
 create policy read_items on public.content_items
   for select using (public.can_read_item(content_items));
 create policy insert_items on public.content_items
-  for insert with check (public.is_member(workspace_id));
+  for insert with check (public.is_staff(workspace_id));
 create policy update_items on public.content_items
-  for update using (public.is_member(workspace_id));
+  for update using (public.is_staff(workspace_id));
 create policy delete_items on public.content_items
-  for delete using (public.has_role(workspace_id, array['owner','member']::public.workspace_role[]));
+  for delete using (public.has_role(workspace_id, array['owner','admin']::public.workspace_role[]));
 
 create policy read_assignees on public.content_item_assignees
   for select using (exists (
@@ -808,7 +1117,7 @@ create policy read_assignees on public.content_item_assignees
 create policy write_assignees on public.content_item_assignees
   for all using (exists (
     select 1 from public.content_items c
-     where c.id = content_item_id and public.is_member(c.workspace_id)
+     where c.id = content_item_id and public.is_staff(c.workspace_id)
   ));
 
 create policy read_assets on public.assets
@@ -817,7 +1126,7 @@ create policy read_assets on public.assets
      where c.id = content_item_id and public.can_read_item(c)
   ));
 create policy write_assets on public.assets
-  for all using (public.is_member(workspace_id));
+  for all using (public.is_staff(workspace_id));
 
 create policy read_versions on public.asset_versions
   for select using (exists (
@@ -826,7 +1135,7 @@ create policy read_versions on public.asset_versions
      where a.id = asset_id and public.can_read_item(c)
   ));
 create policy insert_versions on public.asset_versions
-  for insert with check (public.is_member(workspace_id));
+  for insert with check (public.is_staff(workspace_id));
 
 /*
   Deliberately no update policy on asset_versions.
@@ -836,17 +1145,54 @@ create policy insert_versions on public.asset_versions
   machine and emit an event in the same transaction.
 */
 
+/*
+  Scoped by subject, not by workspace.
+
+  A workspace-wide check here was the bug: a sponsor invited to one video would
+  have read every comment in the account, including notes on projects they were
+  never shown. The comment is visible if — and only if — the thing it hangs off
+  is visible.
+
+  Guests can still write. A sponsor reviewing their own integration is the
+  entire reason to invite one.
+*/
+create or replace function public.can_read_subject(p_type text, p_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select case p_type
+    when 'content_item' then exists (
+      select 1 from public.content_items c
+       where c.id = p_id and public.can_read_item(c)
+    )
+    when 'asset_version' then exists (
+      select 1
+        from public.asset_versions av
+        join public.assets a        on a.id = av.asset_id
+        join public.content_items c on c.id = a.content_item_id
+       where av.id = p_id and public.can_read_item(c)
+    )
+    else false
+  end;
+$$;
+
 create policy read_comments on public.comments
-  for select using (public.is_member(workspace_id));
+  for select using (public.can_read_subject(subject_type, subject_id));
 create policy insert_comments on public.comments
-  for insert with check (public.is_member(workspace_id) and author_id = (select auth.uid()));
+  for insert with check (
+    public.can_read_subject(subject_type, subject_id)
+    and author_id = (select auth.uid())
+  );
 create policy edit_own_comments on public.comments
   for update using (author_id = (select auth.uid()));
 create policy delete_own_comments on public.comments
   for delete using (author_id = (select auth.uid()));
 
 create policy read_events on public.events
-  for select using (public.is_member(workspace_id));
+  for select using (public.is_staff(workspace_id));
 -- No insert policy: events are written only by emit_event(), security definer.
 
 create policy read_jobs on public.jobs
@@ -854,9 +1200,9 @@ create policy read_jobs on public.jobs
 -- No write policy: jobs are enqueued by RPCs and processed by Edge Functions.
 
 create policy read_grants on public.guest_grants
-  for select using (public.is_member(workspace_id) or user_id = (select auth.uid()));
+  for select using (public.is_staff(workspace_id) or user_id = (select auth.uid()));
 create policy manage_grants on public.guest_grants
-  for all using (public.has_role(workspace_id, array['owner','member']::public.workspace_role[]));
+  for all using (public.has_role(workspace_id, array['owner','admin']::public.workspace_role[]));
 ```
 
 **Verify — every table is covered:**
@@ -878,10 +1224,126 @@ it's the check that catches the table you add at 1am six months from now.
 
 ---
 
+## 11b. Publish targets
+
+```powershell
+pnpm dlx supabase migration new 11_publish_targets
+```
+
+`content_items.publish_at` and `platforms[]` cannot express "YouTube on
+Thursday with this title, TikTok on Friday with that one." Packaging is
+per-platform, so it needs its own row per platform.
+
+> Everything from here on is created **after** the blanket RLS migration, so
+> each new table enables RLS and declares its policies inline. A table that
+> ships without them is readable by anyone holding the anon key.
+
+```sql
+create table public.publish_targets (
+  id                uuid primary key default gen_random_uuid(),
+  workspace_id      uuid not null references public.workspaces on delete cascade,
+  content_item_id   uuid not null references public.content_items on delete cascade,
+  platform          public.platform not null,
+  title             text,
+  description       text,
+  tags              text[] not null default '{}',
+  -- The approved thumbnail, chosen from this item's assets.
+  thumbnail_asset_id uuid references public.assets on delete set null,
+  scheduled_at      timestamptz,
+  status            text not null default 'draft'
+                    check (status in ('draft','queued','publishing','published','failed')),
+  external_id       text,          -- the platform's id once it exists
+  external_url      text,
+  last_error        text,
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now(),
+  unique (content_item_id, platform)
+);
+
+create index on public.publish_targets (workspace_id, scheduled_at)
+  where status in ('draft','queued');
+
+alter table public.publish_targets enable row level security;
+
+create policy read_targets on public.publish_targets
+  for select using (exists (
+    select 1 from public.content_items c
+     where c.id = content_item_id and public.can_read_item(c)
+  ));
+
+create policy write_targets on public.publish_targets
+  for all using (public.is_staff(workspace_id));
+
+-- status and external_* are moved by the publish worker, never by a client.
+revoke update (status, external_id, external_url, last_error)
+  on public.publish_targets from authenticated;
+```
+
+---
+
+## 11c. Invites — guest links
+
+```powershell
+pnpm dlx supabase migration new 12_invites
+```
+
+`guest_grants` assumes the person already has an account. This is how someone
+who doesn't gets one.
+
+```sql
+create table public.invites (
+  id              uuid primary key default gen_random_uuid(),
+  workspace_id    uuid not null references public.workspaces on delete cascade,
+  -- null = the whole workspace; set = this project and everything under it
+  content_item_id uuid references public.content_items on delete cascade,
+  role            public.workspace_role not null default 'guest',
+  /*
+    The raw token appears once, in the URL you send. Only its hash is stored,
+    so a leaked database dump does not hand over live access links.
+  */
+  token_hash      text not null unique,
+  email           text,          -- optional: only this address may redeem
+  expires_at      timestamptz not null default now() + interval '14 days',
+  max_uses        int not null default 1,
+  used_count      int not null default 0,
+  revoked_at      timestamptz,
+  created_by      uuid not null references auth.users default auth.uid(),
+  created_at      timestamptz not null default now()
+);
+
+create index on public.invites (workspace_id, created_at desc);
+
+alter table public.invites enable row level security;
+
+/*
+  Deliberately no select policy for the token itself — nobody reads invites
+  directly. Members list them through a view that omits token_hash; redemption
+  happens through redeem_invite(), which is security definer because the person
+  redeeming is not yet a member of anything.
+*/
+create policy manage_invites on public.invites
+  for all using (public.can_invite_guests(workspace_id));
+
+create view public.invites_listing
+with (security_invoker = true) as
+select id, workspace_id, content_item_id, role, email,
+       expires_at, max_uses, used_count, revoked_at, created_by, created_at
+  from public.invites;
+```
+
+Needs `pgcrypto` for the hashing, which Supabase enables by default; add it to
+`01_enums` if `digest()` is missing:
+
+```sql
+create extension if not exists pgcrypto with schema extensions;
+```
+
+---
+
 ## 12. RPCs
 
 ```powershell
-pnpm dlx supabase migration new 11_rpc
+pnpm dlx supabase migration new 13_rpc
 ```
 
 ```sql
@@ -917,14 +1379,21 @@ begin
   if ws is null then
     raise exception 'asset % not found', p_asset_id;
   end if;
-  if not public.is_member(ws) then
+  if not public.is_staff(ws) then
     raise exception 'not a member of this workspace';
   end if;
 
   select coalesce(max(version_number), 0) + 1 into next_number
     from public.asset_versions where asset_id = p_asset_id;
 
-  self_approved := public.has_role(ws, array['owner']::public.workspace_role[]);
+  /*
+    The self-authored rule: if the author already holds approve rights, the
+    version is approved on creation. A creator writing their own script does
+    not approve their own work — it is approved by construction. Otherwise the
+    approval inbox fills with people approving themselves and stops meaning
+    anything.
+  */
+  self_approved := public.can_approve(ws);
 
   insert into public.asset_versions
     (workspace_id, asset_id, version_number, approval_state,
@@ -959,8 +1428,8 @@ begin
     raise exception 'version % not found', p_version_id;
   end if;
 
-  if not public.has_role(v.workspace_id, array['owner']::public.workspace_role[]) then
-    raise exception 'only an owner can approve';
+  if not public.can_approve(v.workspace_id) then
+    raise exception 'no approve permission';
   end if;
 
   -- The state machine: approving a draft skips review, which hides work.
@@ -992,8 +1461,8 @@ begin
   if v.id is null then
     raise exception 'version % not found', p_version_id;
   end if;
-  if not public.has_role(v.workspace_id, array['owner']::public.workspace_role[]) then
-    raise exception 'only an owner can request changes';
+  if not public.can_approve(v.workspace_id) then
+    raise exception 'no approve permission';
   end if;
   if v.approval_state <> 'in_review' then
     raise exception 'cannot request changes from state %', v.approval_state;
@@ -1031,10 +1500,7 @@ begin
   if ws is null then
     raise exception 'content item % not found', p_content_item_id;
   end if;
-  if not exists (
-    select 1 from public.workspace_members m
-     where m.workspace_id = ws and m.user_id = (select auth.uid()) and m.can_publish
-  ) then
+  if not public.can_publish(ws) then
     raise exception 'no publish permission';
   end if;
 
@@ -1071,7 +1537,7 @@ begin
   if c.id is null then
     raise exception 'item % not found', p_item_id;
   end if;
-  if not public.is_member(c.workspace_id) then
+  if not public.is_staff(c.workspace_id) then
     raise exception 'not a member of this workspace';
   end if;
 
@@ -1085,7 +1551,301 @@ end;
 $$;
 ```
 
-### 12b. Lock the columns the client must never write
+### 12b. Invite links
+
+```sql
+/*
+  Returns the raw token exactly once. It is never stored — only its hash is —
+  so if the caller loses it, the invite has to be revoked and reissued. That is
+  the correct trade: a table full of live access links is a breach waiting for
+  a backup to leak.
+*/
+/*
+  Two shapes, distinguished by p_content_item_id:
+
+    null → a staff invite. Workspace-wide, role admin or editor, owner only,
+           and it consumes a seat.
+    set  → a guest invite. That project and everything under it, owner or
+           admin, and it is always free.
+
+  The role is baked into the invite rather than chosen on redemption —
+  otherwise forwarding the link would be privilege escalation.
+*/
+create or replace function public.create_invite(
+  p_workspace_id uuid default null,
+  p_content_item_id uuid default null,
+  p_email text default null,
+  p_role public.workspace_role default 'guest',
+  p_expires_in interval default interval '14 days',
+  p_max_uses int default 1
+)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  ws uuid;
+  raw_token text;
+  staff_count int;
+  limit_seats int;
+begin
+  if p_content_item_id is null then
+    -- Staff invite.
+    ws := p_workspace_id;
+    if ws is null then
+      raise exception 'pass either a workspace or a content item';
+    end if;
+    if p_role not in ('admin','editor') then
+      raise exception 'a workspace invite must be admin or editor';
+    end if;
+    if not public.can_manage_people(ws) then
+      raise exception 'only the owner can add staff';
+    end if;
+
+    /*
+      Seats are counted in staff, never guests. A sponsor who comments once and
+      never returns must not consume one, or creators learn to avoid inviting
+      sponsors — and that is the feature the product is built around.
+
+      Outstanding staff invites count too, otherwise you can oversubscribe by
+      sending several at once.
+    */
+    select count(*) into staff_count
+      from public.workspace_members m
+     where m.workspace_id = ws and m.role in ('owner','admin','editor');
+
+    select count(*) + staff_count into staff_count
+      from public.invites i
+     where i.workspace_id = ws
+       and i.content_item_id is null
+       and i.revoked_at is null
+       and i.expires_at > now()
+       and i.used_count < i.max_uses;
+
+    select w.seat_limit into limit_seats
+      from public.workspaces w where w.id = ws;
+
+    if staff_count >= limit_seats then
+      raise exception 'seat limit reached (% of %)', staff_count, limit_seats;
+    end if;
+  else
+    -- Guest invite.
+    select c.workspace_id into ws
+      from public.content_items c where c.id = p_content_item_id;
+    if ws is null then
+      raise exception 'content item % not found', p_content_item_id;
+    end if;
+    if p_role <> 'guest' then
+      raise exception 'a project invite must be a guest invite';
+    end if;
+    if not public.can_invite_guests(ws) then
+      raise exception 'no permission to invite';
+    end if;
+  end if;
+
+  raw_token := encode(extensions.gen_random_bytes(32), 'hex');
+
+  insert into public.invites
+    (workspace_id, content_item_id, role, token_hash, email, expires_at, max_uses)
+  values
+    (ws, p_content_item_id, p_role,
+     encode(extensions.digest(raw_token, 'sha256'), 'hex'),
+     p_email, now() + p_expires_in, p_max_uses);
+
+  perform public.emit_event(
+    ws,
+    case when p_content_item_id is null then 'workspace' else 'content_item' end,
+    coalesce(p_content_item_id, ws),
+    'invite_created',
+    jsonb_build_object('role', p_role, 'email', p_email)
+  );
+
+  return raw_token;
+end;
+$$;
+
+/*
+  The one function a non-member may call. security definer because the caller
+  is, by definition, not yet a member of anything — no RLS policy written in
+  terms of is_staff() could let them read the invites table.
+*/
+create or replace function public.redeem_invite(p_token text)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  inv public.invites;
+  uid uuid := (select auth.uid());
+  user_email text;
+begin
+  if uid is null then
+    raise exception 'sign in before redeeming an invite';
+  end if;
+
+  select * into inv from public.invites
+   where token_hash = encode(extensions.digest(p_token, 'sha256'), 'hex');
+
+  -- One message for every failure: a distinct "expired" vs "not found" tells
+  -- someone guessing tokens that they guessed a real one.
+  if inv.id is null
+     or inv.revoked_at is not null
+     or inv.expires_at < now()
+     or inv.used_count >= inv.max_uses then
+    raise exception 'this invite is not valid';
+  end if;
+
+  if inv.email is not null then
+    select email into user_email from auth.users where id = uid;
+    if lower(user_email) is distinct from lower(inv.email) then
+      raise exception 'this invite is not valid';
+    end if;
+  end if;
+
+  insert into public.workspace_members (workspace_id, user_id, role)
+  values (inv.workspace_id, uid, inv.role)
+  on conflict (workspace_id, user_id) do nothing;
+
+  if inv.content_item_id is not null then
+    insert into public.guest_grants (workspace_id, user_id, content_item_id)
+    values (inv.workspace_id, uid, inv.content_item_id)
+    on conflict (user_id, content_item_id) do nothing;
+  end if;
+
+  update public.invites set used_count = used_count + 1 where id = inv.id;
+
+  perform public.emit_event(inv.workspace_id, 'content_item', inv.content_item_id,
+                            'invite_redeemed', jsonb_build_object('user_id', uid));
+
+  return inv.workspace_id;
+end;
+$$;
+
+/*
+  Changing someone's tier. RPC rather than a plain update because the
+  last-owner check and the grant cleanup are invariants RLS cannot express, and
+  the audit event has to land in the same transaction.
+*/
+create or replace function public.set_member_role(
+  p_workspace_id uuid,
+  p_user_id uuid,
+  p_role public.workspace_role
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  old_role public.workspace_role;
+begin
+  if not public.can_manage_people(p_workspace_id) then
+    raise exception 'only the owner can change roles';
+  end if;
+
+  select role into old_role
+    from public.workspace_members
+   where workspace_id = p_workspace_id and user_id = p_user_id;
+
+  if old_role is null then
+    raise exception 'not a member of this workspace';
+  end if;
+
+  -- Never leave a workspace ownerless: nobody could administer it again and
+  -- the only repair is a service_role session.
+  if old_role = 'owner' and p_role <> 'owner' then
+    if (select count(*) from public.workspace_members
+         where workspace_id = p_workspace_id and role = 'owner') <= 1 then
+      raise exception 'cannot remove the last owner';
+    end if;
+  end if;
+
+  update public.workspace_members
+     set role = p_role
+   where workspace_id = p_workspace_id and user_id = p_user_id;
+
+  /*
+    Demotion to guest strips workspace-wide access, and staff hold no grants —
+    so the person would otherwise land on an empty app. Grants must be
+    re-issued deliberately rather than inherited from a role they no longer
+    hold.
+  */
+  if p_role = 'guest' and old_role <> 'guest' then
+    delete from public.guest_grants
+     where workspace_id = p_workspace_id and user_id = p_user_id;
+  end if;
+
+  perform public.emit_event(
+    p_workspace_id, 'workspace_member', p_user_id, 'role_changed',
+    jsonb_build_object('from', old_role, 'to', p_role)
+  );
+end;
+$$;
+
+-- Same last-owner guard: a direct delete would let an owner remove themselves.
+create or replace function public.remove_member(p_workspace_id uuid, p_user_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  old_role public.workspace_role;
+begin
+  if not public.can_manage_people(p_workspace_id) then
+    raise exception 'only the owner can remove people';
+  end if;
+
+  select role into old_role
+    from public.workspace_members
+   where workspace_id = p_workspace_id and user_id = p_user_id;
+
+  if old_role is null then
+    return;
+  end if;
+
+  if old_role = 'owner'
+     and (select count(*) from public.workspace_members
+           where workspace_id = p_workspace_id and role = 'owner') <= 1 then
+    raise exception 'cannot remove the last owner';
+  end if;
+
+  delete from public.workspace_members
+   where workspace_id = p_workspace_id and user_id = p_user_id;
+  delete from public.guest_grants
+   where workspace_id = p_workspace_id and user_id = p_user_id;
+
+  perform public.emit_event(
+    p_workspace_id, 'workspace_member', p_user_id, 'member_removed',
+    jsonb_build_object('role', old_role)
+  );
+end;
+$$;
+
+create or replace function public.revoke_invite(p_invite_id uuid)
+returns void
+language sql
+security definer
+set search_path = ''
+as $$
+  update public.invites set revoked_at = now()
+   where id = p_invite_id and public.can_invite_guests(workspace_id);
+$$;
+```
+
+The app side is a `/invite/:token` route: if there's no session, sign in or up
+first, then call `redeem_invite`, then land on the project. Because the grant
+cascades through `ancestor_ids`, granting the project also grants its clips.
+
+> **An invite link still requires an account.** A *public* review link — send a
+> sponsor a URL, they watch and comment with no signup — is a different
+> mechanism, because RLS has no user to check. That needs an Edge Function
+> validating a signed token and reading with `service_role`. Creators ask for
+> this constantly; don't assume this table covers it.
+
+### 12c. Lock the columns the client must never write
 
 ```sql
 revoke update (approval_state) on public.asset_versions from authenticated;
@@ -1101,6 +1861,257 @@ a card is a plain update — the fractional rank is computed client-side by
 `lib/rank.ts` and there's no invariant beyond "you're a member", which the
 policy already covers. Making it an RPC would add a round trip to the most
 frequent action in the app.
+
+---
+
+## 12d. Storage buckets
+
+```powershell
+pnpm dlx supabase migration new 14_storage
+```
+
+`asset_versions.storage_path` has been referenced since step 6 but no bucket
+exists. Storage has its **own** RLS, on `storage.objects` — your table policies
+do not apply to it.
+
+```sql
+insert into storage.buckets (id, name, public)
+values ('assets', 'assets', false)
+on conflict (id) do nothing;
+
+/*
+  Path convention: <workspace_id>/<content_item_id>/<filename>. The workspace
+  id being the first segment is what makes the policy a cheap prefix check
+  rather than a join.
+*/
+create policy "read own workspace assets"
+on storage.objects for select
+using (
+  bucket_id = 'assets'
+  and public.is_staff(((storage.foldername(name))[1])::uuid)
+);
+
+create policy "write own workspace assets"
+on storage.objects for insert
+with check (
+  bucket_id = 'assets'
+  and public.is_staff(((storage.foldername(name))[1])::uuid)
+);
+
+create policy "delete own workspace assets"
+on storage.objects for delete
+using (
+  bucket_id = 'assets'
+  and public.is_staff(((storage.foldername(name))[1])::uuid)
+);
+```
+
+The bucket is private, so the client fetches through signed URLs
+(`createSignedUrl`), not public links. Large video never comes here — it stays
+in Drive by reference. This is thumbnails, PDFs and small attachments.
+
+> Guests are deliberately excluded: this policy checks `is_staff`, so a guest
+> with a grant can read the *rows* but not the *files*. If guests need to see
+> thumbnails, widen it to walk `guest_grants` — but do that on purpose.
+
+---
+
+## 12e. Realtime
+
+```powershell
+pnpm dlx supabase migration new 15_realtime
+```
+
+```sql
+alter publication supabase_realtime add table public.content_items;
+alter publication supabase_realtime add table public.comments;
+alter publication supabase_realtime add table public.asset_versions;
+```
+
+Realtime respects RLS, so subscribers only receive rows they could have read.
+Two rules:
+
+- **Subscribe per board, not per card.** Every subscription is a connection.
+- **Don't add `events` to the publication.** It is append-only and high volume;
+  the activity feed can poll or refetch on window focus.
+
+---
+
+## 12f. Scheduling and the job runner
+
+```powershell
+pnpm dlx supabase migration new 16_scheduling
+```
+
+`lease_jobs` exists but nothing calls it, and nothing notices that a
+`scheduled_at` has arrived. Both need a scheduler.
+
+```sql
+create extension if not exists pg_cron with schema extensions;
+
+-- Anything due in the last minute gets enqueued exactly once; the unique
+-- idempotency_key in the jobs table is what makes "exactly once" true.
+create or replace function public.enqueue_due_publishes()
+returns int
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  queued int := 0;
+begin
+  insert into public.jobs (workspace_id, kind, payload, idempotency_key)
+  select t.workspace_id, 'publish',
+         jsonb_build_object('publish_target_id', t.id),
+         format('publish_target:%s', t.id)
+    from public.publish_targets t
+   where t.status = 'draft'
+     and t.scheduled_at is not null
+     and t.scheduled_at <= now()
+  on conflict (idempotency_key) do nothing;
+
+  get diagnostics queued = row_count;
+
+  update public.publish_targets
+     set status = 'queued'
+   where status = 'draft' and scheduled_at <= now();
+
+  return queued;
+end;
+$$;
+
+select cron.schedule('enqueue-due-publishes', '* * * * *',
+                     $$select public.enqueue_due_publishes()$$);
+```
+
+The worker that *drains* the queue is an Edge Function calling `lease_jobs`,
+also on a cron. It runs with `service_role` — it has to, since it acts on
+behalf of nobody — which is exactly why it lives server-side and never in
+`apps/app`.
+
+**Timezones.** `scheduled_at` is `timestamptz`, so it stores an absolute
+moment. But a creator thinks "Thursday at 9am *my time*", and that is a
+different absolute moment depending on where they are and whether DST has
+shifted. Store the workspace's IANA timezone and resolve in the UI:
+
+```sql
+alter table public.workspaces add column timezone text not null default 'UTC';
+```
+
+---
+
+## 12g. Tests
+
+The guide has said "write tests for `can_read_item`" since step 10 without
+saying how. pgTAP ships with Supabase:
+
+```powershell
+pnpm dlx supabase test new permissions
+```
+
+`supabase/tests/permissions.test.sql`:
+
+```sql
+begin;
+select plan(4);
+
+-- Impersonate a user the way PostgREST does, so RLS actually applies.
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"<member-uuid>","role":"authenticated"}';
+
+select ok(public.is_staff('<workspace-uuid>'), 'editor is staff in own workspace');
+select ok(not public.is_staff('<other-workspace-uuid>'), 'editor blocked from other workspace');
+
+set local request.jwt.claims = '{"sub":"<guest-uuid>","role":"authenticated"}';
+
+select ok(
+  (select public.can_read_item(c) from public.content_items c where c.id = '<granted-item>'),
+  'guest reads the granted item'
+);
+select ok(
+  (select public.can_read_item(c) from public.content_items c where c.id = '<child-of-granted>'),
+  'guest reads a child through the ancestor cascade'
+);
+
+/*
+  Guest isolation. A guest holds a workspace_members row, so these are the
+  cases that catch the whole class of "guest is treated as staff" bugs. Each
+  one was a real hole before is_staff existed.
+*/
+select ok(not public.is_staff('<workspace-uuid>'), 'guest is not staff');
+
+select is_empty(
+  $$select 1 from public.comments
+     where subject_id = '<ungranted-item>'$$,
+  'guest cannot read comments on a project they were not granted'
+);
+
+select is_empty(
+  $$select 1 from public.content_items where id = '<ungranted-item>'$$,
+  'guest cannot read an ungranted project'
+);
+
+select is_empty(
+  $$select 1 from public.workspace_members$$,
+  'guest cannot enumerate the team'
+);
+
+select throws_ok(
+  $$update public.content_items set title = 'hijacked'
+     where id = '<ungranted-item>'$$,
+  null,
+  'guest cannot write to an ungranted project'
+);
+
+-- Editors make things but do not sign them off.
+set local request.jwt.claims = '{"sub":"<editor-uuid>","role":"authenticated"}';
+select ok(public.is_staff('<workspace-uuid>'), 'editor is staff');
+select ok(not public.can_approve('<workspace-uuid>'), 'editor cannot approve');
+select ok(not public.can_publish('<workspace-uuid>'), 'editor cannot publish');
+select ok(not public.can_invite_guests('<workspace-uuid>'), 'editor cannot invite');
+
+-- Admins approve and publish but cannot change the team.
+set local request.jwt.claims = '{"sub":"<admin-uuid>","role":"authenticated"}';
+select ok(public.can_approve('<workspace-uuid>'), 'admin approves');
+select ok(public.can_publish('<workspace-uuid>'), 'admin publishes');
+select ok(not public.can_manage_people('<workspace-uuid>'), 'admin cannot change roles');
+
+select * from finish();
+rollback;
+```
+
+Update `plan(4)` to match the number of assertions — pgTAP fails the run if the
+count is wrong, which is the point.
+
+```powershell
+pnpm dlx supabase test db
+```
+
+Cover all seven cases from the step 10 table, plus the RLS coverage query from
+step 11 as its own test. That second one is what catches the table you add at
+1am six months from now.
+
+---
+
+## 12h. `updated_at`
+
+None of the tables track modification time, which you will want the first time
+you debug a sync bug or sort by "recently touched".
+
+```sql
+create or replace function public.touch_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+-- Repeat for each table that has the column.
+alter table public.content_items add column updated_at timestamptz not null default now();
+create trigger touch_content_items before update on public.content_items
+for each row execute function public.touch_updated_at();
+```
 
 ---
 
@@ -1168,8 +2179,8 @@ begin
   end if;
 
   insert into public.workspaces (name) values ('Leon') returning id into ws;
-  insert into public.workspace_members (workspace_id, user_id, role, can_publish)
-  values (ws, uid, 'owner', true);
+  insert into public.workspace_members (workspace_id, user_id, role)
+  values (ws, uid, 'owner');
 
   insert into public.stages (workspace_id, name, position) values
     (ws,'Ideas',0),(ws,'In progress',1),(ws,'Review',2),(ws,'Published',3);
@@ -1327,10 +2338,14 @@ Do them in that order. Each one leaves the app working.
 ## 16. Done when
 
 - [ ] `supabase start` runs; `.env` set; the app boots without the missing-env throw
-- [ ] `supabase db reset` applies all 11 migrations cleanly to an empty database
+- [ ] `supabase db reset` applies all 16 migrations cleanly to an empty database
 - [ ] The RLS coverage query returns `rls_on = true` and `policies > 0` for every table
-- [ ] `can_read_item` passes all seven cases in the step 10 table
+- [ ] `can_read_item` passes all seven cases in the step 10 table, under pgTAP
 - [ ] `check_ancestor_integrity()` returns 0 rows after a re-parent
+- [ ] A signup creates a `profiles` row automatically
+- [ ] `create_invite` → `redeem_invite` gives a fresh account access to one
+      project and its children, and nothing else
+- [ ] A revoked or expired invite fails with the same message as a bogus one
 - [ ] Types regenerate into `packages/types/src/database.ts`
 - [ ] The board reads real rows and **a drag survives a refresh**
 - [ ] `mock-data.ts` is deleted
@@ -1344,7 +2359,7 @@ Docker isn't running. `docker ps` must succeed first.
 
 **`infinite recursion detected in policy for relation "workspace_members"`**
 A policy on that table is calling a function that reads it without
-`security definer`. `is_member` must be `security definer` — that's what makes
+`security definer`. `is_staff` must be `security definer` — that's what makes
 it bypass the policy it's being used inside.
 
 **`permission denied for schema public` inside a function**

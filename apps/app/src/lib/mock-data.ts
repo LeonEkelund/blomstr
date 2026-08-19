@@ -17,8 +17,8 @@ export const stages: Stage[] = [
 
 export const members: Member[] = [
   { id: "u1", name: "Leon", role: "owner" },
-  { id: "u2", name: "Max", role: "member" },
-  { id: "u3", name: "Sarah", role: "member" },
+  { id: "u2", name: "Max", role: "editor" },
+  { id: "u3", name: "Sarah", role: "admin" },
   { id: "u4", name: "Jonas", role: "guest" },
 ]
 
