@@ -32,11 +32,11 @@ export function App() {
         <Route path="/projects/:projectId" element={<ProjectLayout />}>
           <Route index element={<Navigate to="overview" replace />} />
           <Route path="overview" element={<OverviewTab />} />
-          <Route path="review" element={<ReviewTab />} />
           <Route path="notes" element={<NotesTab />} />
           <Route path="files" element={<FilesTab />} />
           <Route path="repurposed" element={<RepurposedTab />} />
           <Route path="mindmap" element={<MindmapTab />} />
+          <Route path="review" element={<ReviewTab />} />
           <Route path="publish" element={<PublishTab />} />
         </Route>
         <Route path="/home" element={<PlaceholderPage title="Home" />} />

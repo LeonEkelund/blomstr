@@ -31,13 +31,19 @@ import {
 import { members, stages } from "@/lib/mock-data"
 import { cn } from "@/lib/utils"
 
+/*
+  Ordered as the work flows: where it stands, then planning, then the material,
+  then what came out of it — and the two gates last. Review and Publish are the
+  points where something leaves the team, so they sit at the end rather than
+  interleaved with the tabs you use while making it.
+*/
 const tabs = [
   { to: "overview", label: "Overview" },
-  { to: "review", label: "Review" },
   { to: "notes", label: "Notes" },
   { to: "files", label: "Files" },
   { to: "repurposed", label: "Repurposed" },
   { to: "mindmap", label: "Mindmap" },
+  { to: "review", label: "Review" },
   { to: "publish", label: "Publish" },
 ]
 
