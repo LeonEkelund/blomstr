@@ -42,7 +42,6 @@ export function App() {
         <Route path="/home" element={<PlaceholderPage title="Home" />} />
         <Route path="/calendar" element={<PlaceholderPage title="Calendar" />} />
         <Route path="/tasks" element={<PlaceholderPage title="My Tasks" />} />
-        <Route path="/ideas" element={<PlaceholderPage title="Ideas" />} />
         <Route path="/team" element={<PlaceholderPage title="Team" />} />
         <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
         <Route path="/integrations" element={<PlaceholderPage title="Integrations" />} />

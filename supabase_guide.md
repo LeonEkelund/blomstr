@@ -619,8 +619,22 @@ create table public.content_items (
   ancestor_ids    uuid[] not null default '{}',
   type            public.content_type not null,
   title           text not null,
+  /*
+    What the Notes tab writes to. Scratch — nobody approves a note, so it
+    needs no versions and no review. The script is the opposite and lives in
+    assets as kind = 'document'.
+
+    Titles and descriptions per platform are packaging, not notes; those are
+    on publish_targets.
+  */
+  notes           text,
   stage_id        uuid not null references public.stages,
   position        text not null,
+  /*
+    Soft delete. A hard delete cascades away every comment, version and event
+    attached to the project, and creators will do it by accident.
+  */
+  archived_at     timestamptz,
   due_at          timestamptz,
   publish_at      timestamptz,
   platforms       public.platform[] not null default '{}',
