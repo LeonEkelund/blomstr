@@ -7,6 +7,7 @@ import { AuthProvider } from "@/components/auth-provider"
 import { ThemeProvider } from "@/components/theme-provider"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { ContentProvider } from "@/hooks/use-content"
+import { WorkspaceProvider } from "@/hooks/use-workspace"
 import "./index.css"
 
 const queryClient = new QueryClient({
@@ -26,13 +27,15 @@ createRoot(root).render(
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <TooltipProvider delay={300}>
-            <ContentProvider>
-              <BrowserRouter>
-                <App />
-              </BrowserRouter>
-            </ContentProvider>
-          </TooltipProvider>
+          <WorkspaceProvider>
+            <TooltipProvider delay={300}>
+              <ContentProvider>
+                <BrowserRouter>
+                  <App />
+                </BrowserRouter>
+              </ContentProvider>
+            </TooltipProvider>
+          </WorkspaceProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>

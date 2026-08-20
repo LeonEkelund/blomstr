@@ -2,7 +2,9 @@ import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom"
 import { useAuth } from "@/components/auth-provider"
 import { AppSidebar } from "@/components/layout/app-sidebar"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { useWorkspace } from "@/hooks/use-workspace"
 import { BoardPage } from "@/routes/board"
+import { OnboardingPage } from "@/routes/onboarding"
 import { PlaceholderPage } from "@/routes/placeholder"
 import { ProjectLayout } from "@/routes/project/project-layout"
 import {
@@ -31,6 +33,24 @@ function RequireAuth() {
     return <Navigate to="/sign-in" replace state={{ from: location.pathname }} />
   }
 
+  return <Outlet />
+}
+
+/**
+ * The app shell, which every screen except onboarding needs a workspace for —
+ * queries are scoped by workspace id, so there is nothing to render without
+ * one.
+ *
+ * A signed-in user with no workspace is a normal state, not an error: it is
+ * every new signup, and eventually every guest who arrives through an invite
+ * before it has been redeemed.
+ */
+function AppShell() {
+  const { workspace, loading } = useWorkspace()
+
+  if (loading) return null
+  if (!workspace) return <Navigate to="/onboarding" replace />
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -47,25 +67,32 @@ export function App() {
       <Route path="/sign-in" element={<SignInPage />} />
 
       <Route element={<RequireAuth />}>
-        <Route path="/" element={<Navigate to="/projects" replace />} />
-        <Route path="/projects" element={<BoardPage />} />
-        <Route path="/projects/:projectId" element={<ProjectLayout />}>
-          <Route index element={<Navigate to="overview" replace />} />
-          <Route path="overview" element={<OverviewTab />} />
-          <Route path="notes" element={<NotesTab />} />
-          <Route path="files" element={<FilesTab />} />
-          <Route path="repurposed" element={<RepurposedTab />} />
-          <Route path="mindmap" element={<MindmapTab />} />
-          <Route path="review" element={<ReviewTab />} />
-          <Route path="publish" element={<PublishTab />} />
+        <Route path="/onboarding" element={<OnboardingPage />} />
+
+        <Route element={<AppShell />}>
+          <Route path="/" element={<Navigate to="/projects" replace />} />
+          <Route path="/projects" element={<BoardPage />} />
+          <Route path="/projects/:projectId" element={<ProjectLayout />}>
+            <Route index element={<Navigate to="overview" replace />} />
+            <Route path="overview" element={<OverviewTab />} />
+            <Route path="notes" element={<NotesTab />} />
+            <Route path="files" element={<FilesTab />} />
+            <Route path="repurposed" element={<RepurposedTab />} />
+            <Route path="mindmap" element={<MindmapTab />} />
+            <Route path="review" element={<ReviewTab />} />
+            <Route path="publish" element={<PublishTab />} />
+          </Route>
+          <Route path="/home" element={<PlaceholderPage title="Home" />} />
+          <Route path="/calendar" element={<PlaceholderPage title="Calendar" />} />
+          <Route path="/tasks" element={<PlaceholderPage title="My Tasks" />} />
+          <Route path="/team" element={<PlaceholderPage title="Team" />} />
+          <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
+          <Route
+            path="/integrations"
+            element={<PlaceholderPage title="Integrations" />}
+          />
+          <Route path="*" element={<PlaceholderPage title="Not found" />} />
         </Route>
-        <Route path="/home" element={<PlaceholderPage title="Home" />} />
-        <Route path="/calendar" element={<PlaceholderPage title="Calendar" />} />
-        <Route path="/tasks" element={<PlaceholderPage title="My Tasks" />} />
-        <Route path="/team" element={<PlaceholderPage title="Team" />} />
-        <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
-        <Route path="/integrations" element={<PlaceholderPage title="Integrations" />} />
-        <Route path="*" element={<PlaceholderPage title="Not found" />} />
       </Route>
     </Routes>
   )
