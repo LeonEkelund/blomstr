@@ -3,6 +3,7 @@ import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import { BrowserRouter } from "react-router-dom"
 import { App } from "@/App"
+import { AuthProvider } from "@/components/auth-provider"
 import { ThemeProvider } from "@/components/theme-provider"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { ContentProvider } from "@/hooks/use-content"
@@ -24,13 +25,15 @@ createRoot(root).render(
   <StrictMode>
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider delay={300}>
-          <ContentProvider>
-            <BrowserRouter>
-              <App />
-            </BrowserRouter>
-          </ContentProvider>
-        </TooltipProvider>
+        <AuthProvider>
+          <TooltipProvider delay={300}>
+            <ContentProvider>
+              <BrowserRouter>
+                <App />
+              </BrowserRouter>
+            </ContentProvider>
+          </TooltipProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
   </StrictMode>,

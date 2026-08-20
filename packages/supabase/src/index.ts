@@ -16,4 +16,9 @@ export function createBrowserClient(url: string, anonKey: string): SupabaseClien
   })
 }
 
-export type { SupabaseClient }
+/*
+  Re-exported so consuming apps don't each depend on @supabase/supabase-js
+  directly — one place declares the version, and a mobile app later gets the
+  same types without a second copy in its package.json.
+*/
+export type { Session, SupabaseClient, User } from "@supabase/supabase-js"
