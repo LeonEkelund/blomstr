@@ -7,6 +7,7 @@ import {
   DragOverlay,
   type DragStartEvent,
   KeyboardSensor,
+  MeasuringStrategy,
   PointerSensor,
   useDroppable,
   useSensor,
@@ -28,11 +29,13 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { type BoardColumn, useBoard } from "@/hooks/use-board"
 import { useContent } from "@/hooks/use-content"
+import { useMembers } from "@/hooks/use-members"
 import { formatDate, initials, publishLabel, typeLabels } from "@/lib/content"
-import { members } from "@/lib/mock-data"
 import { cn } from "@/lib/utils"
+import { BoardSkeleton } from "@/routes/board-skeleton"
 
 function Card({ item, overlay }: { item: ContentItem; overlay?: boolean }) {
+  const { members } = useMembers()
   const assignees = members.filter((m) => item.assigneeIds.includes(m.id))
   const date = item.publishAt ?? item.dueAt
   const dateLabel = publishLabel(item.publishAt)
@@ -62,21 +65,30 @@ function Card({ item, overlay }: { item: ContentItem; overlay?: boolean }) {
         )}
       </div>
 
-      <div className="mt-3 flex items-center justify-between">
-        <div className="flex -space-x-1.5">
-          {assignees.map((m) => (
-            <Avatar key={m.id} className="size-6 border-2 border-card">
-              <AvatarFallback className="text-[10px]">{initials(m.name)}</AvatarFallback>
-            </Avatar>
-          ))}
+      {/*
+        Dropped entirely when there is nobody assigned and no date, rather than
+        rendering an empty row — a new project has neither, and the row was
+        leaving 12px of blank space under every card.
+      */}
+      {(assignees.length > 0 || date) && (
+        <div className="mt-3 flex items-center justify-between">
+          <div className="flex -space-x-1.5">
+            {assignees.map((m) => (
+              <Avatar key={m.id} className="size-6 border-2 border-card">
+                <AvatarFallback className="text-[10px]">
+                  {initials(m.name)}
+                </AvatarFallback>
+              </Avatar>
+            ))}
+          </div>
+          {date && (
+            <span className="text-xs text-muted-foreground">
+              {dateLabel}
+              {formatDate(date)}
+            </span>
+          )}
         </div>
-        {date && (
-          <span className="text-xs text-muted-foreground">
-            {dateLabel}
-            {formatDate(date)}
-          </span>
-        )}
-      </div>
+      )}
     </article>
   )
 }
@@ -259,7 +271,7 @@ function Column({
 }
 
 export function BoardPage() {
-  const { columns, itemsById, moveItem, projectCount } = useBoard()
+  const { columns, itemsById, moveItem, projectCount, loading } = useBoard()
   const [activeId, setActiveId] = useState<string | null>(null)
   const [composingStageId, setComposingStageId] = useState<string | null>(null)
   const activeItem = activeId ? itemsById.get(activeId) : undefined
@@ -268,8 +280,12 @@ export function BoardPage() {
     An empty board gets one invitation, in the first stage, rather than a
     placeholder in every column — four of them reads as something failing to
     load. Work starts in the leftmost stage, so that is where the prompt goes.
+
+    Gated on `loading`, because an unresolved query and an empty workspace look
+    identical: zero items. Without it, every refresh flashes "create your first
+    project" before the real cards arrive.
   */
-  const boardIsEmpty = projectCount === 0
+  const boardIsEmpty = !loading && projectCount === 0
   const firstStageId = columns[0]?.stage.id
 
   const sensors = useSensors(
@@ -328,6 +344,15 @@ export function BoardPage() {
     }
   }
 
+  if (loading) {
+    return (
+      <>
+        <PageHeader title="Projects" />
+        <BoardSkeleton columns={columns} />
+      </>
+    )
+  }
+
   return (
     <>
       <PageHeader title="Projects">
@@ -337,6 +362,16 @@ export function BoardPage() {
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
+        /*
+          Re-measure the columns continuously instead of once at drag start.
+
+          Cards are different heights — a card with a badge and a date is taller
+          than a bare title — and every card that shifts out of the way
+          invalidates the rectangles dnd-kit measured up front. Dragging upward
+          mostly survives that; dragging downward accumulates the error, because
+          everything you pass has already moved.
+        */
+        measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}

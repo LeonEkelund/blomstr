@@ -6,6 +6,13 @@
  * the app-level types that have no direct table equivalent.
  */
 
+/*
+  Generated from the live schema by `supabase gen types typescript`. Never
+  hand-edited. The app-level types below are the shapes components think in;
+  the mapping between the two lives in apps/app/src/lib/mappers.ts.
+*/
+export type { Database } from "./database"
+
 export type ContentType =
   | "youtube_video"
   | "short"

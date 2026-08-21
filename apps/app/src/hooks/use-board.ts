@@ -1,7 +1,7 @@
 import type { ContentItem, Stage } from "@blomstr/types"
 import { useMemo } from "react"
 import { useContent } from "@/hooks/use-content"
-import { stages } from "@/lib/mock-data"
+import { useStages } from "@/hooks/use-stages"
 
 export interface BoardColumn {
   stage: Stage
@@ -10,7 +10,8 @@ export interface BoardColumn {
 
 /** The board's view of the content store: stages, grouped and ordered. */
 export function useBoard() {
-  const { items, moveItem } = useContent()
+  const { items, moveItem, loading: itemsLoading } = useContent()
+  const { stages, loading: stagesLoading } = useStages()
 
   const columns = useMemo<BoardColumn[]>(() => {
     // Only top-level projects reach the board; derivatives live inside one.
@@ -24,7 +25,7 @@ export function useBoard() {
           .filter((i) => i.stageId === stage.id)
           .sort((a, b) => a.position.localeCompare(b.position)),
       }))
-  }, [items])
+  }, [items, stages])
 
   const itemsById = useMemo(() => new Map(items.map((i) => [i.id, i])), [items])
 
@@ -33,5 +34,11 @@ export function useBoard() {
     [items],
   )
 
-  return { columns, itemsById, moveItem, projectCount }
+  return {
+    columns,
+    itemsById,
+    moveItem,
+    projectCount,
+    loading: itemsLoading || stagesLoading,
+  }
 }

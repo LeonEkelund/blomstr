@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { useContent } from "@/hooks/use-content"
+import { useMembers } from "@/hooks/use-members"
+import { useStages } from "@/hooks/use-stages"
 import {
   approvalLabels,
   formatLongDate,
@@ -28,7 +30,6 @@ import {
   platformLabels,
   typeLabels,
 } from "@/lib/content"
-import { members, stages } from "@/lib/mock-data"
 import { cn } from "@/lib/utils"
 
 /*
@@ -49,6 +50,7 @@ const tabs = [
 
 function StagePicker({ item }: { item: ContentItem }) {
   const { setStage } = useContent()
+  const { stages } = useStages()
   const current = stages.find((s) => s.id === item.stageId)
 
   return (
@@ -89,6 +91,7 @@ function RailField({ label, children }: { label: string; children: React.ReactNo
 }
 
 function Rail({ item }: { item: ContentItem }) {
+  const { members } = useMembers()
   const assignees = members.filter((m) => item.assigneeIds.includes(m.id))
 
   return (

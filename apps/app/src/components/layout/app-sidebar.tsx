@@ -18,6 +18,7 @@ import {
   Users,
 } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
+import { useAuth } from "@/components/auth-provider"
 import { type Theme, useTheme } from "@/components/theme-provider"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
@@ -43,7 +44,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { currentUser } from "@/lib/mock-data"
+import { useCurrentMember } from "@/hooks/use-members"
 
 interface NavItem {
   to: string
@@ -155,7 +156,9 @@ function ThemeMenuGroup() {
 }
 
 function NavUser() {
-  const initials = currentUser.name.slice(0, 2).toUpperCase()
+  const { signOut } = useAuth()
+  const { name, email } = useCurrentMember()
+  const initials = name.slice(0, 2).toUpperCase()
 
   return (
     <SidebarMenu>
@@ -163,15 +166,13 @@ function NavUser() {
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
-              <SidebarMenuButton size="lg" tooltip={currentUser.name}>
+              <SidebarMenuButton size="lg" tooltip={name}>
                 <Avatar className="size-8">
                   <AvatarFallback className="text-xs">{initials}</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left leading-tight">
-                  <span className="truncate text-sm font-medium">{currentUser.name}</span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    {currentUser.email}
-                  </span>
+                  <span className="truncate text-sm font-medium">{name}</span>
+                  <span className="truncate text-xs text-muted-foreground">{email}</span>
                 </div>
                 <ChevronsUpDown className="ml-auto size-4 text-muted-foreground" />
               </SidebarMenuButton>
@@ -182,12 +183,8 @@ function NavUser() {
             <DropdownMenuGroup>
               <DropdownMenuLabel className="font-normal">
                 <div className="grid leading-tight">
-                  <span className="text-sm font-medium text-foreground">
-                    {currentUser.name}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {currentUser.email}
-                  </span>
+                  <span className="text-sm font-medium text-foreground">{name}</span>
+                  <span className="text-xs text-muted-foreground">{email}</span>
                 </div>
               </DropdownMenuLabel>
             </DropdownMenuGroup>
@@ -203,7 +200,7 @@ function NavUser() {
             <DropdownMenuSeparator />
             <ThemeMenuGroup />
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => void signOut()}>
               <LogOut />
               Log out
             </DropdownMenuItem>
