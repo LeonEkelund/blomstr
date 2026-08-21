@@ -108,7 +108,9 @@ export function RepurposedTab() {
       {children.map((child) => (
         <article key={child.id} className="rounded-lg border bg-card p-3">
           <h3 className="text-sm font-medium">{child.title}</h3>
-          <p className="mt-1 text-xs text-muted-foreground">{typeLabels[child.type]}</p>
+          {child.type && (
+            <p className="mt-1 text-xs text-muted-foreground">{typeLabels[child.type]}</p>
+          )}
         </article>
       ))}
     </div>

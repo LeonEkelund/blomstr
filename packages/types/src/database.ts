@@ -249,7 +249,7 @@ export type Database = {
           source_start_ms: number | null
           stage_id: string
           title: string
-          type: Database["public"]["Enums"]["content_type"]
+          type: Database["public"]["Enums"]["content_type"] | null
           workspace_id: string
         }
         Insert: {
@@ -268,7 +268,7 @@ export type Database = {
           source_start_ms?: number | null
           stage_id: string
           title: string
-          type: Database["public"]["Enums"]["content_type"]
+          type?: Database["public"]["Enums"]["content_type"] | null
           workspace_id: string
         }
         Update: {
@@ -287,7 +287,7 @@ export type Database = {
           source_start_ms?: number | null
           stage_id?: string
           title?: string
-          type?: Database["public"]["Enums"]["content_type"]
+          type?: Database["public"]["Enums"]["content_type"] | null
           workspace_id?: string
         }
         Relationships: [

@@ -1,8 +1,8 @@
-import type { ContentItem, Platform } from "@blomstr/types"
+import type { ContentItem, ContentType, Platform } from "@blomstr/types"
 
 /** Display strings and formatters shared by the board and the project page. */
 
-export const typeLabels: Record<ContentItem["type"], string> = {
+export const typeLabels: Record<ContentType, string> = {
   youtube_video: "YouTube",
   short: "Short",
   tiktok: "TikTok",

@@ -28,6 +28,8 @@ interface ContentContextValue {
   moveItem: (id: string, stageId: string, index: number) => void
   /** Send `id` to the end of `stageId` — what the header dropdown does. */
   setStage: (id: string, stageId: string) => void
+  /** Append a new project to the bottom of `stageId`. */
+  createItem: (stageId: string, title: string) => void
 }
 
 const ContentContext = createContext<ContentContextValue | null>(null)
@@ -68,9 +70,39 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     [moveItem],
   )
 
+  const createItem = useCallback((stageId: string, title: string) => {
+    setItems((current) => {
+      const last = current
+        .filter((i) => i.parentId === null && i.stageId === stageId)
+        .sort((a, b) => a.position.localeCompare(b.position))
+        .at(-1)
+
+      return [
+        ...current,
+        {
+          id: crypto.randomUUID(),
+          workspaceId: "w1",
+          parentId: null,
+          ancestorIds: [],
+          // Untyped until someone says otherwise — see ContentItem.type.
+          type: null,
+          title: title.trim(),
+          stageId,
+          position: rankBetween(last?.position ?? null, null),
+          assigneeIds: [],
+          approvalState: "draft",
+          dueAt: null,
+          publishAt: null,
+          platforms: [],
+          createdAt: new Date().toISOString(),
+        },
+      ]
+    })
+  }, [])
+
   const value = useMemo(
-    () => ({ items, moveItem, setStage }),
-    [items, moveItem, setStage],
+    () => ({ items, moveItem, setStage, createItem }),
+    [items, moveItem, setStage, createItem],
   )
 
   return <ContentContext value={value}>{children}</ContentContext>

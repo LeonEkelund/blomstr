@@ -57,7 +57,11 @@ export interface ContentItem {
   parentId: string | null
   /** Every ancestor, nearest last. Used for guest access resolution. */
   ancestorIds: string[]
-  type: ContentType
+  /**
+   * Null until it is known. An idea often has no form yet, and defaulting to
+   * one means the card claims something nobody said.
+   */
+  type: ContentType | null
   title: string
   stageId: string
   /** Fractional index — string-ordered, so reorders touch one row. */

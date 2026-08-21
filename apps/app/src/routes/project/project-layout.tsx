@@ -207,9 +207,11 @@ export function ProjectLayout() {
           <h1 className="truncate font-medium">{item.title}</h1>
         </nav>
 
-        <Badge variant="secondary" className="shrink-0 font-normal">
-          {typeLabels[item.type]}
-        </Badge>
+        {item.type && (
+          <Badge variant="secondary" className="shrink-0 font-normal">
+            {typeLabels[item.type]}
+          </Badge>
+        )}
         <StagePicker item={item} />
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
