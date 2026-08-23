@@ -149,11 +149,25 @@ export function ContentProvider({ children }: { children: ReactNode }) {
         .eq("id", id)
       if (error) throw error
     },
-    ...optimistic<{ id: string; stageId: string; position: string }>((current, vars) =>
-      current.map((i) =>
-        i.id === vars.id ? { ...i, stageId: vars.stageId, position: vars.position } : i,
-      ),
-    ),
+    /*
+      No optimistic update here, deliberately.
+
+      `previewMove` has already patched the cache — that is what put the card
+      in its new place. Doing it again in onMutate meant two state updates per
+      drop: the second landing a microtask later, with fresh object identities,
+      re-rendering just as the drag library released the card. That second
+      render was the flicker, and it followed us across two drag libraries
+      because it was never theirs.
+
+      Snapshot synchronously so a failed write can still be rolled back.
+    */
+    onMutate: () => ({
+      previous: queryClient.getQueryData<ContentItem[]>(queryKey),
+    }),
+    onError: (_error, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKey, context.previous)
+      queryClient.invalidateQueries({ queryKey })
+    },
   })
 
   const create = useMutation({
@@ -238,10 +252,22 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       )
     }
 
+    /*
+      Patch first, then write — one state update, never two.
+
+      The mutation no longer patches the cache itself, so anything that moves a
+      card has to preview it before committing. That is also the order the drag
+      handler uses.
+    */
     function moveItem(id: string, stageId: string, index: number) {
       const resolved = resolveMove(id, stageId, index)
       if (!resolved) return
 
+      queryClient.setQueryData<ContentItem[]>(queryKey, (current = []) =>
+        current.map((i) =>
+          i.id === id ? { ...i, stageId, position: resolved.position } : i,
+        ),
+      )
       move.mutate({ id, stageId, position: resolved.position })
     }
 

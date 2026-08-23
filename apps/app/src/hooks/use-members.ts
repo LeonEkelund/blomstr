@@ -13,10 +13,17 @@ import { supabase } from "@/lib/supabase"
  * *between* them, so PostgREST cannot embed one in the other. Merged here
  * instead.
  */
+/*
+  Module-level so the fallback keeps one identity. `= []` inline would mint a
+  new array every render, which quietly breaks memoisation in anything that
+  takes members as a prop.
+*/
+const NO_MEMBERS: Member[] = []
+
 export function useMembers() {
   const { workspace } = useWorkspace()
 
-  const { data: members = [], isPending } = useQuery({
+  const { data: members = NO_MEMBERS, isPending } = useQuery({
     queryKey: ["members", workspace?.id],
     enabled: Boolean(workspace),
     queryFn: async (): Promise<Member[]> => {
