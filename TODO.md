@@ -63,14 +63,25 @@ one that turns approval from a Discord thread into a product.
 
 ## 2. Home — the approval inbox
 
-`/home` is a `PlaceholderPage`. It should be *what needs you right now*: a
-single queue fed by the `events` table.
+`/home` is a `PlaceholderPage`. It should answer *what needs you right now*.
 
-**Blocked on §1** — nothing emits events until approvals exist, so building it
-now means building it against an empty table and then again later.
+It splits into halves that are blocked differently:
 
-This is the thing that makes the app a daily habit rather than somewhere you
-occasionally visit. Second priority precisely because it depends on the first.
+| Section | Source | Blocked? |
+|---|---|---|
+| **Needs your approval** | versions in `in_review` | **Yes** — §1; no versions exist |
+| **Recent activity** | `events` | **Yes** — see below |
+| **Your deadlines** | `due_at` on `content_items` | No — buildable today |
+| **Assigned to you** | `content_item_assignees` | No — buildable today |
+
+`emit_event()` is defined in migration 07 but **nothing calls it** — the only
+insert into `events` is inside the function body itself. So the table is
+permanently empty until the §1 RPCs land and start emitting.
+
+The deadlines-and-assignments half is real work that survives, so a first pass
+is possible now. But the approval queue is the half that makes this the
+daily-habit screen rather than a summary you check occasionally — and that half
+needs §1 first.
 
 ---
 

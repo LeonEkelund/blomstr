@@ -10,7 +10,7 @@ import {
   Search,
   X,
 } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Link, NavLink, Outlet, useNavigate, useParams } from "react-router-dom"
 import {
   AlertDialog,
@@ -111,6 +111,18 @@ function EditableTitle({ item }: { item: ContentItem }) {
   const { updateItem } = useContent()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(item.title)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  /*
+    Select on open only.
+
+    Not an inline callback ref — that is a new function identity every render,
+    so React re-attaches it on each keystroke and re-selects the text, and the
+    next character replaces everything typed so far.
+  */
+  useEffect(() => {
+    if (editing) inputRef.current?.select()
+  }, [editing])
 
   function commit() {
     const next = draft.trim()
@@ -127,12 +139,7 @@ function EditableTitle({ item }: { item: ContentItem }) {
   if (editing) {
     return (
       <input
-        /*
-          Focused imperatively rather than with autoFocus: the click that
-          opened this was the request to type, and a ref runs after the element
-          is actually in the document, so the caret lands reliably.
-        */
-        ref={(node) => node?.select()}
+        ref={inputRef}
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
         onBlur={commit}
