@@ -23,6 +23,14 @@ export const platformLabels: Record<Platform, string> = {
   linkedin: "LinkedIn",
 }
 
+/*
+  Ordered for the picker rather than alphabetically: long-form first, then the
+  short-form derived from it, then the rest. Typed as the label maps' keys, so
+  adding an enum value fails the build here until it is listed.
+*/
+export const contentTypes = Object.keys(typeLabels) as ContentType[]
+export const platforms = Object.keys(platformLabels) as Platform[]
+
 export const approvalLabels: Record<ContentItem["approvalState"], string> = {
   draft: "Draft",
   in_review: "In review",

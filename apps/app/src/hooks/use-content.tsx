@@ -37,6 +37,24 @@ interface ContentContextValue {
   setStage: (id: string, stageId: string) => void
   /** Append a new project to the bottom of `stageId`. */
   createItem: (stageId: string, title: string) => void
+  /** Patch any directly-editable field. Every rail control calls this. */
+  updateItem: (id: string, patch: ItemPatch) => void
+  /**
+   * Soft delete — sets `archived_at` on the item and everything under it.
+   *
+   * Not a hard delete: `parent_id` cascades, so removing a podcast episode
+   * would silently take its clips with it and there would be no way back.
+   */
+  archiveItem: (id: string) => void
+}
+
+/** The fields the project page can write directly, without an RPC. */
+export interface ItemPatch {
+  title?: string
+  type?: ContentItem["type"]
+  dueAt?: string | null
+  publishAt?: string | null
+  platforms?: ContentItem["platforms"]
 }
 
 const ContentContext = createContext<ContentContextValue | null>(null)
@@ -220,6 +238,45 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     ),
   })
 
+  const update = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: ItemPatch }) => {
+      const { error } = await supabase
+        .from("content_items")
+        .update({
+          ...(patch.title !== undefined && { title: patch.title }),
+          ...(patch.type !== undefined && { type: patch.type }),
+          ...(patch.dueAt !== undefined && { due_at: patch.dueAt }),
+          ...(patch.publishAt !== undefined && { publish_at: patch.publishAt }),
+          ...(patch.platforms !== undefined && { platforms: patch.platforms }),
+        })
+        .eq("id", id)
+      if (error) throw error
+    },
+    ...optimistic<{ id: string; patch: ItemPatch }>((current, vars) =>
+      current.map((i) => (i.id === vars.id ? { ...i, ...vars.patch } : i)),
+    ),
+  })
+
+  const archive = useMutation({
+    mutationFn: async ({ id }: { id: string }) => {
+      const archivedAt = new Date().toISOString()
+
+      /*
+        Archives the subtree in one statement. `ancestor_ids` contains every
+        forebear, so `cs` matches the item's descendants at any depth — the
+        same GIN index the guest-grant lookup uses.
+      */
+      const { error } = await supabase
+        .from("content_items")
+        .update({ archived_at: archivedAt })
+        .or(`id.eq.${id},ancestor_ids.cs.{${id}}`)
+      if (error) throw error
+    },
+    ...optimistic<{ id: string }>((current, vars) =>
+      current.filter((i) => i.id !== vars.id && !i.ancestorIds.includes(vars.id)),
+    ),
+  })
+
   const value = useMemo<ContentContextValue>(() => {
     /** Where a card would land, or null if it is already sitting there. */
     function resolveMove(id: string, stageId: string, index: number) {
@@ -306,6 +363,8 @@ export function ContentProvider({ children }: { children: ReactNode }) {
           tempId: crypto.randomUUID(),
         })
       },
+      updateItem: (id, patch) => update.mutate({ id, patch }),
+      archiveItem: (id) => archive.mutate({ id }),
     }
     /*
       Depends on `move.mutate`, not `move`.
@@ -315,7 +374,17 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       identity each render and every consumer — the board, every card, the
       project page — re-rendered with it. The `.mutate` functions are stable.
     */
-  }, [items, isPending, workspaceId, move.mutate, create.mutate, queryClient, queryKey])
+  }, [
+    items,
+    isPending,
+    workspaceId,
+    move.mutate,
+    create.mutate,
+    update.mutate,
+    archive.mutate,
+    queryClient,
+    queryKey,
+  ])
 
   return <ContentContext value={value}>{children}</ContentContext>
 }
