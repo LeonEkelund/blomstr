@@ -1,13 +1,13 @@
 import type { ContentItem } from "@blomstr/types"
 import {
   CalendarClock,
-  FileText,
   FolderOpen,
   LayoutDashboard,
   MessagesSquare,
   Network,
   Scissors,
 } from "lucide-react"
+import { lazy, Suspense } from "react"
 import { useOutletContext } from "react-router-dom"
 import { EmptyState } from "@/components/empty-state"
 import { Button } from "@/components/ui/button"
@@ -18,6 +18,15 @@ import { typeLabels } from "@/lib/content"
 function useProject() {
   return useOutletContext<ContentItem>()
 }
+
+/*
+  Split out of the main bundle: ProseMirror is ~1.1MB raw, and loading it up
+  front would make everyone pay for the editor just to look at the board. It
+  arrives when someone opens Notes.
+*/
+const NotesEditor = lazy(() =>
+  import("@/components/notes-editor").then((m) => ({ default: m.NotesEditor })),
+)
 
 /**
  * The landing tab, so it is the same one every time — a default that moves
@@ -52,18 +61,30 @@ export function ReviewTab() {
   )
 }
 
+/**
+ * No empty state here, deliberately.
+ *
+ * An empty document with a placeholder *is* the empty state, and it is already
+ * the thing you came to use — putting an "Add a note" button in front of it
+ * would just be a click between you and a cursor.
+ */
 export function NotesTab() {
+  const project = useProject()
+  const { updateItem } = useContent()
+
   return (
-    <EmptyState
-      icon={FileText}
-      title="No notes yet"
-      description="The brief, the hook, reference links — anything the team needs before production starts. The script lives here too, but is versioned and reviewed."
-      action={
-        <Button variant="outline" size="sm" disabled>
-          Add a note
-        </Button>
-      }
-    />
+    // Fallback is blank rather than a spinner: the chunk resolves in a frame
+    // or two on any warm cache, and a spinner that flashes reads as slower
+    // than nothing at all.
+    <Suspense fallback={null}>
+      <NotesEditor
+        // Remounts when you navigate between projects, so the editor never
+        // carries one project's document into another.
+        key={project.id}
+        value={project.notes}
+        onChange={(notes) => updateItem(project.id, { notes })}
+      />
+    </Suspense>
   )
 }
 

@@ -12,19 +12,26 @@ out, with a single approval pass.
 
 ## Status
 
-Early scaffold. The monorepo, the app shell and a working board exist. There is
-no backend yet — no Supabase project, no schema, no auth. The board renders
-from fixtures and moves are held in local state, so a refresh resets it.
+The board and the project page run on real data. You can sign in, create a
+workspace, move cards between stages and have it survive a refresh, and edit a
+project's fields and notes.
+
+What does not exist yet is the review loop — nothing creates or approves a
+version, so a project's status reads `Draft` and always will. See
+[TODO.md](TODO.md) for what that blocks and why it's next.
 
 | Area | State |
 |---|---|
 | Monorepo, tooling, build | Done |
 | App shell — sidebar, routing, layout | Done |
-| Kanban board | Drag-and-drop wired; fixtures, not persisted |
 | Theming — light / dark / system | Done |
-| Supabase, schema, RLS | Not started |
-| Auth, teams, permissions | Not started |
-| Project workspace, review, publishing | Not started |
+| Auth — sign-in, session, onboarding | Done |
+| Schema and RLS | Migrations 01–10 applied |
+| Kanban board | Drag-and-drop, persisted |
+| Project page — inline edit, archive, notes | Done |
+| RPCs — approval, publishing, invites | **Not written** |
+| Review, files, publish tabs | Empty states |
+| Home, calendar, tasks, team | Placeholders |
 | Mobile — board layout and touch drag | Not started |
 | `apps/landing`, `apps/admin` | Placeholder folders |
 
@@ -39,7 +46,8 @@ from fixtures and moves are held in local state, so a refresh resets it.
 | **Icons** | Lucide |
 | **Data** | TanStack Query 5 |
 | **Routing** | react-router 7 |
-| **Drag & drop** | dnd-kit |
+| **Drag & drop** | Pragmatic drag-and-drop |
+| **Editor** | Tiptap — notes only, code-split |
 | **Backend** | Supabase — Postgres, Auth, Realtime, Edge Functions |
 | **File storage** | Google Drive by reference; Supabase Storage for small assets |
 | **Monorepo** | pnpm workspaces + Turborepo |
@@ -72,14 +80,20 @@ supabase/     migrations + Edge Functions (not initialised yet)
 src/
   App.tsx                    routes
   main.tsx                   Theme, QueryClient, Tooltip, Router
+  components/auth-provider   session, resolved once before any route renders
   components/theme-provider  light / dark / system, persisted
+  components/notes-editor    Tiptap; lazy-loaded, markdown in / markdown out
   components/layout/         page-header, app-sidebar
   components/ui/             shadcn components
-  hooks/use-board.ts         board state + the move mutation
-  hooks/use-mobile.ts        breakpoint hook used by the sidebar
+  hooks/use-content.tsx      the content store — queries and every mutation
+  hooks/use-board.ts         the board's view of that store
+  hooks/use-workspace.tsx    current workspace; everything is scoped by it
+  hooks/use-members.ts       workspace roster joined to profiles
   routes/board.tsx           the Kanban
-  routes/placeholder.tsx     stub for unbuilt pages
-  lib/mock-data.ts           fixtures — delete once Supabase lands
+  routes/project/            layout, rail, tabs
+  routes/sign-in.tsx         email/password, Google stubbed
+  routes/onboarding.tsx      first workspace
+  lib/mappers.ts             snake_case rows → camelCase app types
   lib/rank.ts                fractional indexing for board order
   lib/supabase.ts            client; throws if env vars are missing
 ```
@@ -141,6 +155,20 @@ attribution all need two code paths forever.
 
 `asset_versions.approval_state`, with project status derived from it.
 Otherwise "approved" becomes ambiguous the second someone uploads V4.
+
+### Notes are markdown text; the script is a versioned asset
+
+`content_items.notes` holds the brief, the hook, links — scratch the team
+writes together. It is plain markdown in a `text` column, so it stays
+greppable, diffable and reachable by Postgres full-text search, and it is
+never versioned because nobody approves a note.
+
+The script is the opposite and lives elsewhere: an asset with
+`kind = 'document'`, so it gets versions, comments and approval like anything
+else that leaves the team.
+
+The distinction is who the writing is for. Notes are for the people making the
+thing; the script is the thing.
 
 ### One polymorphic comment primitive
 
@@ -242,10 +270,13 @@ no project that exists off the board. Calendar is the same items grouped by
 `publish_at`. Clicking a card opens `/projects/:id` as a real route — it has to
 be linkable, since the whole point is sending it to whoever made the thing.
 
-> ⚠️ `ContentItem.approvalState` currently sits on the item, which contradicts
-> [approval living on the version](#approval-lives-on-the-version-never-the-project).
-> It exists so the board can render a badge from fixtures. Resolve it when the
-> schema lands, before the project page depends on either shape.
+> `ContentItem.approvalState` sits on the app-level type but is **not** a
+> column. It is read from the `content_item_status` view and merged in by
+> `toContentItem`, so the board can render a badge without every consumer
+> joining. The client can never write it.
+>
+> It reads `draft` for every project today, because nothing creates a version
+> yet — see [TODO.md](TODO.md) §1.
 
 ### Decided, not yet built
 

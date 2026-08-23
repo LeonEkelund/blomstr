@@ -70,6 +70,8 @@ export interface ContentItem {
    */
   type: ContentType | null
   title: string
+  /** Markdown. Scratch space for the team — never versioned, never approved. */
+  notes: string
   stageId: string
   /** Fractional index — string-ordered, so reorders touch one row. */
   position: string

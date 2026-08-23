@@ -143,3 +143,84 @@
     @apply font-sans;
   }
 }
+
+/*
+  Notes editor typography.
+
+  Written here rather than as utility classes because the editor renders its
+  own DOM from the document — there is no JSX to hang classes on.
+
+  Deliberately quiet: generous line height, a measure that stays readable,
+  headings that step down by weight more than size. It should read as a page
+  someone wrote, not as a form field with rich text bolted on.
+*/
+@layer components {
+  .ProseMirror {
+    @apply text-[0.9375rem] leading-[1.75] text-foreground;
+  }
+
+  .ProseMirror > * + * {
+    @apply mt-4;
+  }
+
+  .ProseMirror h1 {
+    @apply mt-8 mb-1 text-xl font-semibold tracking-tight;
+  }
+  .ProseMirror h2 {
+    @apply mt-7 mb-1 text-base font-semibold tracking-tight;
+  }
+  .ProseMirror h3 {
+    @apply mt-6 mb-1 text-[0.9375rem] font-semibold;
+  }
+  /* First heading shouldn't push the document down from the top edge. */
+  .ProseMirror > :first-child {
+    @apply mt-0;
+  }
+
+  .ProseMirror ul,
+  .ProseMirror ol {
+    @apply pl-5;
+  }
+  .ProseMirror ul {
+    @apply list-disc;
+  }
+  .ProseMirror ol {
+    @apply list-decimal;
+  }
+  .ProseMirror li::marker {
+    @apply text-muted-foreground;
+  }
+  .ProseMirror li > p {
+    @apply my-0;
+  }
+  .ProseMirror li + li {
+    @apply mt-1;
+  }
+
+  .ProseMirror blockquote {
+    @apply border-l-2 pl-4 text-muted-foreground;
+  }
+
+  .ProseMirror code {
+    @apply rounded bg-muted px-1 py-0.5 font-mono text-[0.85em];
+  }
+  .ProseMirror pre {
+    @apply overflow-x-auto rounded-lg bg-muted p-4 font-mono text-[0.85em];
+  }
+  .ProseMirror pre code {
+    @apply bg-transparent p-0;
+  }
+
+  .ProseMirror a {
+    @apply underline decoration-muted-foreground/40 underline-offset-2 transition-colors hover:decoration-foreground;
+  }
+
+  .ProseMirror hr {
+    @apply my-8 border-t;
+  }
+
+  /* Shown only on the first line of an empty document. */
+  .ProseMirror p.is-editor-empty:first-child::before {
+    @apply pointer-events-none float-left h-0 text-muted-foreground content-[attr(data-placeholder)];
+  }
+}

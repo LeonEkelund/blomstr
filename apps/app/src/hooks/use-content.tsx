@@ -52,6 +52,7 @@ interface ContentContextValue {
 export interface ItemPatch {
   title?: string
   type?: ContentItem["type"]
+  notes?: string
   dueAt?: string | null
   publishAt?: string | null
   platforms?: ContentItem["platforms"]
@@ -225,6 +226,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
           ancestorIds: [],
           type: null,
           title: vars.title,
+          notes: "",
           stageId: vars.stageId,
           position: vars.position,
           assigneeIds: [],
@@ -245,6 +247,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
         .update({
           ...(patch.title !== undefined && { title: patch.title }),
           ...(patch.type !== undefined && { type: patch.type }),
+          ...(patch.notes !== undefined && { notes: patch.notes }),
           ...(patch.dueAt !== undefined && { due_at: patch.dueAt }),
           ...(patch.publishAt !== undefined && { publish_at: patch.publishAt }),
           ...(patch.platforms !== undefined && { platforms: patch.platforms }),

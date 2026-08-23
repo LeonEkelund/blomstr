@@ -26,6 +26,8 @@ export function toContentItem(
     ancestorIds: row.ancestor_ids,
     type: row.type,
     title: row.title,
+    // Markdown, empty when untouched — the editor wants a string, not null.
+    notes: row.notes ?? "",
     stageId: row.stage_id,
     position: row.position,
     assigneeIds,
