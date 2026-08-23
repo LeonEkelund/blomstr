@@ -23,6 +23,16 @@ interface ContentContextValue {
   loading: boolean
   /** Place `id` in `stageId` at `index`, counted without the moved item. */
   moveItem: (id: string, stageId: string, index: number) => void
+  /**
+   * Same as `moveItem` but cache-only — no write.
+   *
+   * Used while dragging so the data keeps step with dnd-kit's preview. If they
+   * diverge, releasing renders one frame of the old order before the reorder
+   * applies, which reads as the card flickering back to where it came from.
+   */
+  previewMove: (id: string, stageId: string, index: number) => void
+  /** Persist wherever `previewMove` left the card. Called once, on drop. */
+  commitMove: (id: string) => void
   /** Send `id` to the end of `stageId` — what the header dropdown does. */
   setStage: (id: string, stageId: string) => void
   /** Append a new project to the bottom of `stageId`. */
@@ -104,14 +114,22 @@ export function ContentProvider({ children }: { children: ReactNode }) {
         )
         return { previous }
       },
+      /*
+        Rolls back and resyncs on failure only.
+
+        Deliberately no `onSettled` refetch. The optimistic value is exactly
+        what was written, so confirming it changes nothing on screen — but the
+        response replaces every item with a freshly built object, and that
+        re-render arrived a beat after each drop as a visible flicker.
+      */
       onError: (
         _error: unknown,
         _vars: TVars,
         context?: { previous?: ContentItem[] },
       ) => {
         if (context?.previous) queryClient.setQueryData(queryKey, context.previous)
+        queryClient.invalidateQueries({ queryKey })
       },
-      onSettled: () => queryClient.invalidateQueries({ queryKey }),
     }
   }
 
@@ -159,6 +177,12 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       })
       if (error) throw error
     },
+    /*
+      Unlike a move, a create *does* need the refetch: the optimistic row
+      carries a temporary id, and the real one only exists server-side. Without
+      this the card would look right but not be clickable.
+    */
+    onSuccess: () => queryClient.invalidateQueries({ queryKey }),
     ...optimistic<{ stageId: string; title: string; position: string; tempId: string }>(
       (current, vars) => [
         ...current,
@@ -183,29 +207,68 @@ export function ContentProvider({ children }: { children: ReactNode }) {
   })
 
   const value = useMemo<ContentContextValue>(() => {
-    function moveItem(id: string, stageId: string, index: number) {
+    /** Where a card would land, or null if it is already sitting there. */
+    function resolveMove(id: string, stageId: string, index: number) {
       const moving = items.find((i) => i.id === id)
-      if (!moving) return
+      if (!moving) return null
 
       const { before, after } = rankForSlot(items, id, stageId, index)
 
-      // Already sitting in that gap — no rank to mint, and this fires on every
+      // Already in that gap — no rank to mint, and this runs on every
       // dragover tick.
       if (
         moving.stageId === stageId &&
         (before === null || moving.position > before) &&
         (after === null || moving.position < after)
       ) {
-        return
+        return null
       }
 
-      move.mutate({ id, stageId, position: rankBetween(before, after) })
+      return { position: rankBetween(before, after) }
+    }
+
+    function previewMove(id: string, stageId: string, index: number) {
+      const resolved = resolveMove(id, stageId, index)
+      if (!resolved) return
+
+      queryClient.setQueryData<ContentItem[]>(queryKey, (current = []) =>
+        current.map((i) =>
+          i.id === id ? { ...i, stageId, position: resolved.position } : i,
+        ),
+      )
+    }
+
+    function moveItem(id: string, stageId: string, index: number) {
+      const resolved = resolveMove(id, stageId, index)
+      if (!resolved) return
+
+      move.mutate({ id, stageId, position: resolved.position })
     }
 
     return {
       items,
       loading: Boolean(workspaceId) && isPending,
       moveItem,
+      previewMove,
+      /*
+        Persists whatever the preview settled on, rather than recomputing —
+        recomputing could pick a different rank and shift the card on release,
+        which is the flicker this exists to avoid.
+      */
+      commitMove: (id: string) => {
+        /*
+          Read from the cache, not from `items`.
+
+          `previewMove` is called immediately before this on drop, and `items`
+          is the array from the last render — so the closure still holds the
+          pre-move position and would persist the wrong one.
+        */
+        const moving = queryClient
+          .getQueryData<ContentItem[]>(queryKey)
+          ?.find((i) => i.id === id)
+        if (!moving) return
+        move.mutate({ id, stageId: moving.stageId, position: moving.position })
+      },
       setStage: (id, stageId) => moveItem(id, stageId, Number.MAX_SAFE_INTEGER),
       createItem: (stageId, title) => {
         const { before } = rankForSlot(items, null, stageId, Number.MAX_SAFE_INTEGER)
@@ -218,7 +281,15 @@ export function ContentProvider({ children }: { children: ReactNode }) {
         })
       },
     }
-  }, [items, isPending, workspaceId, move, create])
+    /*
+      Depends on `move.mutate`, not `move`.
+
+      useMutation returns a new result object on every render, so listing the
+      mutation itself defeated this memo entirely: the context value got a new
+      identity each render and every consumer — the board, every card, the
+      project page — re-rendered with it. The `.mutate` functions are stable.
+    */
+  }, [items, isPending, workspaceId, move.mutate, create.mutate, queryClient, queryKey])
 
   return <ContentContext value={value}>{children}</ContentContext>
 }
