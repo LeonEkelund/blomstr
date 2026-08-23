@@ -1,8 +1,18 @@
+import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine"
+import {
+  draggable,
+  dropTargetForElements,
+  monitorForElements,
+} from "@atlaskit/pragmatic-drag-and-drop/element/adapter"
+import { autoScrollForElements } from "@atlaskit/pragmatic-drag-and-drop-auto-scroll/element"
+import {
+  attachClosestEdge,
+  type Edge,
+  extractClosestEdge,
+} from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge"
 import type { ContentItem, Member } from "@blomstr/types"
-import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd"
 import { Plus } from "lucide-react"
-import { memo, useState } from "react"
-import { flushSync } from "react-dom"
+import { memo, useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { PageHeader } from "@/components/layout/page-header"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -15,32 +25,44 @@ import { cn } from "@/lib/utils"
 import { BoardSkeleton } from "@/routes/board-skeleton"
 
 /*
-  Members are passed in rather than read from a hook here.
+  The drag layer is the browser's own, driven by Pragmatic drag and drop.
 
-  Every card subscribing to the same query meant the drop's synchronous state
-  update re-rendered and re-subscribed all of them in one frame, which is what
-  made releasing a card stutter. One subscription, at the top.
+  Nothing here holds the card in a parallel layout while it moves — the browser
+  owns the drag, and React only renders the indicator line and the final
+  reorder. That is the point: a re-render mid-drag cannot desynchronise
+  anything, because there is nothing to desynchronise.
+*/
+
+/** What a card puts on the wire while being dragged, and as a drop target. */
+type CardData = { type: "card"; itemId: string; stageId: string }
+type ColumnData = { type: "column"; stageId: string }
+
+function isCardData(data: Record<string | symbol, unknown>): data is CardData {
+  return data.type === "card"
+}
+
+function isColumnData(data: Record<string | symbol, unknown>): data is ColumnData {
+  return data.type === "column"
+}
+
+/*
+  Members are passed in rather than read from a hook here: every card
+  subscribing to the same query meant one state change re-rendered and
+  re-subscribed all of them at once.
 */
 const Card = memo(function Card({
   item,
   members,
-  dragging,
 }: {
   item: ContentItem
   members: Member[]
-  dragging?: boolean
 }) {
   const assignees = members.filter((m) => item.assigneeIds.includes(m.id))
   const date = item.publishAt ?? item.dueAt
   const dateLabel = publishLabel(item.publishAt)
 
   return (
-    <article
-      className={cn(
-        "rounded-lg border bg-card p-3 transition-shadow",
-        dragging ? "cursor-grabbing shadow-lg" : "cursor-grab hover:border-foreground/20",
-      )}
-    >
+    <article className="rounded-lg border bg-card p-3 transition-colors hover:border-foreground/20">
       <h3 className="text-sm leading-snug font-medium">{item.title}</h3>
 
       <div className="mt-2 flex items-center gap-1.5 empty:mt-0">
@@ -88,9 +110,149 @@ const Card = memo(function Card({
 })
 
 /**
+ * Where the card will land.
+ *
+ * Sits in the 8px gap between cards, so showing it never changes the layout —
+ * which is what stops the list twitching as you move across it.
+ *
+ * Full-strength `primary` rather than a faint tint, with a terminal dot that
+ * sits outside the card's edge: the drag preview follows the cursor and covers
+ * whatever is under it, so the indicator has to be readable from the part that
+ * is not obscured.
+ */
+function DropLine({ edge, active }: { edge: Edge; active: boolean }) {
+  return (
+    <div
+      aria-hidden
+      className={cn(
+        "pointer-events-none absolute inset-x-0 h-0.5 rounded-full bg-primary",
+        /*
+          Always mounted, only faded.
+
+          Crossing from one card to the next swaps which card owns the
+          indicator. Mounting and unmounting two separate elements left a frame
+          with neither on screen — the blink. Both exist at all times and cross-
+          fade in the same pixel instead.
+
+          The fade out is slower than the fade in on purpose: the incoming line
+          is already at full strength before the outgoing one has gone, so
+          there is no moment where the gap looks empty.
+        */
+        active ? "opacity-100 duration-0" : "opacity-0 duration-150",
+        "transition-opacity",
+        /*
+          Drawn on the boundary between two cards, not inside the padding of
+          whichever one the pointer happens to be in.
+
+          The lower half of one card's box and the upper half of the next mean
+          the same thing — "between these two" — so drawing them 4px apart made
+          the line hop as you crossed from one to the other. The boxes are
+          flush, so a line centred on the shared edge lands in the same pixel
+          either way.
+        */
+        edge === "top" ? "-top-px" : "-bottom-px",
+      )}
+    >
+      <span className="absolute top-1/2 -left-1 size-2 -translate-y-1/2 rounded-full border-2 border-primary bg-background" />
+    </div>
+  )
+}
+
+function DraggableCard({ item, members }: { item: ContentItem; members: Member[] }) {
+  /*
+    Two elements, deliberately.
+
+    The drop target is the outer box, which carries the padding that makes the
+    gap between cards — so the drop targets tile with nothing between them.
+    When the gap belonged to the column instead, holding a card in it left the
+    column as the only target, the indicator vanished, and the drop appended to
+    the bottom.
+
+    The draggable is the inner card, so the picture the browser drags is the
+    card itself rather than the card plus empty space.
+  */
+  const outerRef = useRef<HTMLDivElement>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const [dragging, setDragging] = useState(false)
+  const [edge, setEdge] = useState<Edge | null>(null)
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const outer = outerRef.current
+    const card = cardRef.current
+    if (!outer || !card) return
+
+    const data: CardData = { type: "card", itemId: item.id, stageId: item.stageId }
+
+    return combine(
+      draggable({
+        element: card,
+        getInitialData: () => ({ ...data }),
+        onDragStart: () => setDragging(true),
+        onDrop: () => setDragging(false),
+      }),
+      dropTargetForElements({
+        element: outer,
+        // A card is not a drop target for itself.
+        canDrop: ({ source }) =>
+          isCardData(source.data) && source.data.itemId !== item.id,
+        // Without this the browser shows a + and calls it a copy.
+        getDropEffect: () => "move",
+        /*
+          Which half of the card the pointer is in decides whether the drop
+          lands above or below it. That is the whole reordering model — no
+          index maths while dragging, just an edge.
+        */
+        getData: ({ input, element: target }) =>
+          attachClosestEdge(
+            { ...data },
+            { input, element: target, allowedEdges: ["top", "bottom"] },
+          ),
+        onDrag: ({ self }) => setEdge(extractClosestEdge(self.data)),
+        onDragLeave: () => setEdge(null),
+        onDrop: () => setEdge(null),
+      }),
+    )
+  }, [item.id, item.stageId])
+
+  return (
+    // py-1 rather than a gap on the column: the padding belongs to the card,
+    // so there is no strip of column between two cards to lose the pointer in.
+    <div ref={outerRef} className="relative py-1">
+      <DropLine edge="top" active={edge === "top"} />
+      <DropLine edge="bottom" active={edge === "bottom"} />
+      {/*
+        The card is its own drag handle and its own link.
+
+        A real <a> would let the browser start a native link drag instead of
+        ours, so this is a div with an explicit role. Enter opens the project;
+        the drag is pointer-driven and does not claim any key.
+      */}
+      {/* biome-ignore lint/a11y/useSemanticElements: a button may only contain phrasing content, and the card is an article with a heading */}
+      <div
+        ref={cardRef}
+        role="button"
+        tabIndex={0}
+        onClick={() => navigate(`/projects/${item.id}`)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") navigate(`/projects/${item.id}`)
+        }}
+        className={cn(
+          "cursor-grab rounded-lg outline-offset-2 transition-opacity focus-visible:outline-2 focus-visible:outline-ring active:cursor-grabbing",
+          // Faded, not hidden: the browser drags a picture of the card, and
+          // the original staying in place is what keeps the column steady.
+          dragging && "opacity-40",
+        )}
+      >
+        <Card item={item} members={members} />
+      </div>
+    </div>
+  )
+}
+
+/**
  * Inline composer rather than a dialog: adding a project is a one-field
  * action, and a modal for one field breaks the flow of looking at the board.
- * Shaped like a card so the column never changes height as it opens.
  */
 function Composer({ stageId, onClose }: { stageId: string; onClose: () => void }) {
   const { createItem } = useContent()
@@ -137,10 +299,6 @@ function FirstProjectCard({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       className="group flex w-full flex-col items-start rounded-lg border bg-card p-3 text-left transition-colors hover:border-foreground/20"
     >
-      {/*
-        Icon inline with the label rather than boxed above it — a tinted square
-        reads as a badge, and this is an action.
-      */}
       <span className="flex items-center gap-1.5 text-sm font-medium">
         <Plus
           strokeWidth={1.5}
@@ -170,7 +328,41 @@ function Column({
   onCloseCompose: () => void
   showFirstProject: boolean
 }) {
-  const navigate = useNavigate()
+  const ref = useRef<HTMLDivElement>(null)
+  const [isOver, setIsOver] = useState(false)
+
+  useEffect(() => {
+    const element = ref.current
+    if (!element) return
+
+    const data: ColumnData = { type: "column", stageId: column.stage.id }
+
+    return combine(
+      dropTargetForElements({
+        element,
+        canDrop: ({ source }) => isCardData(source.data),
+        getDropEffect: () => "move",
+        getData: () => ({ ...data }),
+        /*
+          Tinted only when the card comes from somewhere else.
+
+          Changing column is the consequential move — the project's stage
+          changes — so it gets the whole column as feedback. Reordering inside
+          a column does not, since the indicator line already says everything
+          and lighting up the column you are already in is just noise.
+        */
+        onDragEnter: ({ source }) => {
+          if (isCardData(source.data)) {
+            setIsOver(source.data.stageId !== column.stage.id)
+          }
+        },
+        onDragLeave: () => setIsOver(false),
+        onDrop: () => setIsOver(false),
+      }),
+      // Scrolls a long column while you hold a card near its edge.
+      autoScrollForElements({ element }),
+    )
+  }, [column.stage.id])
 
   return (
     <section className="flex w-72 shrink-0 flex-col">
@@ -191,78 +383,43 @@ function Column({
         </button>
       </header>
 
-      <Droppable droppableId={column.stage.id}>
-        {(provided, snapshot) => (
-          <div
-            ref={provided.innerRef}
-            {...provided.droppableProps}
-            className={cn(
-              "flex min-h-24 flex-1 flex-col gap-2 rounded-xl transition-colors duration-150",
-              /*
-                A soft fill rather than a dashed outline, and only when the
-                column is empty — once there are cards, the placeholder gap
-                already shows where the card will land.
-              */
-              snapshot.isDraggingOver &&
-                column.items.length === 0 &&
-                "bg-foreground/[0.04]",
-            )}
-          >
-            {column.items.map((item, index) => (
-              <Draggable key={item.id} draggableId={item.id} index={index}>
-                {(dragProvided, dragSnapshot) => (
-                  /*
-                    The whole card is the drag handle, and also the click
-                    target for opening the project.
+      <div
+        ref={ref}
+        className={cn(
+          // No gap: each card carries its own padding so the drop targets tile.
+          "flex min-h-24 flex-1 flex-col rounded-xl transition-colors duration-150",
+          // A soft fill rather than a dashed outline. See onDragEnter above for
+          // why this is only ever a card arriving from another column.
+          isOver && "bg-foreground/[0.04]",
+        )}
+      >
+        {column.items.map((item) => (
+          <DraggableCard key={item.id} item={item} members={members} />
+        ))}
 
-                    Not a <Link>: this library refuses to start a drag from an
-                    anchor or button, so wrapping the card in one would make it
-                    undraggable. It does suppress the click that follows a drag,
-                    so navigating on click is safe. Enter is free — space is
-                    what lifts a card — so it opens the project for keyboard
-                    users.
-                  */
-                  // biome-ignore lint/a11y/useSemanticElements: a real button cannot be dragged — this library blocks drags that start on interactive elements
-                  <div
-                    ref={dragProvided.innerRef}
-                    role="button"
-                    tabIndex={0}
-                    {...dragProvided.draggableProps}
-                    {...dragProvided.dragHandleProps}
-                    onClick={() => navigate(`/projects/${item.id}`)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") navigate(`/projects/${item.id}`)
-                    }}
-                    className="rounded-lg outline-offset-2 focus-visible:outline-2 focus-visible:outline-ring"
-                  >
-                    <Card
-                      item={item}
-                      members={members}
-                      dragging={dragSnapshot.isDragging}
-                    />
-                  </div>
-                )}
-              </Draggable>
-            ))}
-
-            {/* Holds the gap open where the dragged card will land. */}
-            {provided.placeholder}
-
-            {composing && <Composer stageId={column.stage.id} onClose={onCloseCompose} />}
-            {showFirstProject && !composing && <FirstProjectCard onClick={onCompose} />}
+        {/* Matching the cards' own padding, now that the column has no gap. */}
+        {composing && (
+          <div className="py-1">
+            <Composer stageId={column.stage.id} onClose={onCloseCompose} />
           </div>
         )}
-      </Droppable>
+        {showFirstProject && !composing && (
+          <div className="py-1">
+            <FirstProjectCard onClick={onCompose} />
+          </div>
+        )}
+      </div>
     </section>
   )
 }
 
 export function BoardPage() {
   const { columns, projectCount, loading } = useBoard()
-  const { previewMove, commitMove } = useContent()
+  const { moveItem } = useContent()
   // One subscription for the whole board, handed down to the cards.
   const { members } = useMembers()
   const [composingStageId, setComposingStageId] = useState<string | null>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   /*
     An empty board gets one invitation, in the first stage, rather than a
@@ -270,43 +427,109 @@ export function BoardPage() {
     load. Work starts in the leftmost stage, so that is where the prompt goes.
 
     Gated on `loading`, because an unresolved query and an empty workspace look
-    identical: zero items. Without it, every refresh flashes "create your first
-    project" before the real cards arrive.
+    identical: zero items.
   */
   const boardIsEmpty = !loading && projectCount === 0
   const firstStageId = columns[0]?.stage.id
 
   /*
-    One handler, and no preview logic at all — the library owns the shuffle
-    while a card is in the air and reports the result once.
+    One listener for the whole board, rather than a handler per card.
 
-    `destination.index` is already the index within the target column *without*
-    the moved card, which is exactly what a rank needs, for both reordering and
-    moving between columns.
+    Runs once on drop and translates "above that card" or "in that column" into
+    the index a rank needs. Nothing is written while dragging.
   */
-  function handleDragEnd({ draggableId, source, destination }: DropResult) {
-    if (!destination) return // cancelled, or dropped outside a column
+  useEffect(
+    () =>
+      monitorForElements({
+        canMonitor: ({ source }) => isCardData(source.data),
+        onDrop({ source, location }) {
+          const targets = location.current.dropTargets
+          if (targets.length === 0 || !isCardData(source.data)) return
 
-    const unchanged =
-      destination.droppableId === source.droppableId && destination.index === source.index
-    if (unchanged) return
+          const itemId = source.data.itemId
+          const overCard = targets.find((t) => isCardData(t.data))
+          const overColumn = targets.find((t) => isColumnData(t.data))
 
-    /*
-      The reorder has to be on screen before this handler returns.
+          if (overCard && isCardData(overCard.data)) {
+            const stageId = overCard.data.stageId
+            const column = columns.find((c) => c.stage.id === stageId)
+            if (!column) return
 
-      hello-pangea finishes its drop animation, calls this, and then releases
-      the card back to normal layout. If the new order has not rendered by
-      then, the card paints once in its old position — the blink. Writing to
-      the query cache is close to synchronous but goes through an observer, so
-      React can schedule that render just late enough to show.
+            /*
+              Indices are resolved against the column *without* the dragged
+              card, which is what the rank helper expects — and it makes moving
+              within a column and moving between them the same calculation.
+            */
+            const without = column.items.filter((i) => i.id !== itemId)
+            const overIndex = without.findIndex(
+              (i) => isCardData(overCard.data) && i.id === overCard.data.itemId,
+            )
+            if (overIndex === -1) return
 
-      flushSync closes the gap: render now, inside the handler.
-    */
-    flushSync(() => {
-      previewMove(draggableId, destination.droppableId, destination.index)
-    })
-    commitMove(draggableId)
-  }
+            const edge = extractClosestEdge(overCard.data)
+            moveItem(itemId, stageId, edge === "bottom" ? overIndex + 1 : overIndex)
+            return
+          }
+
+          if (overColumn && isColumnData(overColumn.data)) {
+            // Dropped on the empty space below the cards: append.
+            moveItem(itemId, overColumn.data.stageId, Number.MAX_SAFE_INTEGER)
+          }
+        },
+      }),
+    [columns, moveItem],
+  )
+
+  useEffect(() => {
+    const element = scrollRef.current
+    if (!element) return
+
+    return combine(
+      /*
+        The whole board is a drop target purely to claim the cursor.
+
+        Native drag and drop draws its own feedback, and the browser decides
+        which by asking the thing under the pointer what it would do. Nothing
+        answering means "copy", which is the plus sign — so the gaps between
+        columns produced one even though cards and columns had already said
+        "move". This covers the gaps.
+
+        It never receives a drop: the monitor only acts on card and column
+        targets, so releasing here does nothing, which is the right outcome for
+        dropping a card on the background.
+      */
+      dropTargetForElements({
+        element,
+        canDrop: ({ source }) => isCardData(source.data),
+        getDropEffect: () => "move",
+      }),
+      // Scrolls the board sideways when a card is held near its left or right edge.
+      autoScrollForElements({ element }),
+    )
+  }, [])
+
+  /*
+    Claims the cursor for the whole page, not just the board.
+
+    The browser decides which drag cursor to draw by asking whatever is under
+    the pointer what it would do with the drop. Anything that does not answer
+    means "copy" — the plus. The board answers, but the sidebar, the header and
+    the space past the last column do not, so the plus kept flickering back
+    whenever the pointer strayed off the columns.
+
+    This cannot remove the cursor: during a native drag the browser owns it and
+    CSS cursor rules are ignored. It can only make it consistently the quiet
+    one.
+  */
+  useEffect(
+    () =>
+      dropTargetForElements({
+        element: document.body,
+        canDrop: ({ source }) => isCardData(source.data),
+        getDropEffect: () => "move",
+      }),
+    [],
+  )
 
   if (loading) {
     return (
@@ -323,23 +546,21 @@ export function BoardPage() {
         <span className="text-xs text-muted-foreground">{projectCount} projects</span>
       </PageHeader>
 
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="flex-1 overflow-x-auto p-6">
-          <div className="flex h-full gap-4">
-            {columns.map((column) => (
-              <Column
-                key={column.stage.id}
-                column={column}
-                members={members}
-                composing={composingStageId === column.stage.id}
-                onCompose={() => setComposingStageId(column.stage.id)}
-                onCloseCompose={() => setComposingStageId(null)}
-                showFirstProject={boardIsEmpty && column.stage.id === firstStageId}
-              />
-            ))}
-          </div>
+      <div ref={scrollRef} className="flex-1 overflow-x-auto p-6">
+        <div className="flex h-full gap-4">
+          {columns.map((column) => (
+            <Column
+              key={column.stage.id}
+              column={column}
+              members={members}
+              composing={composingStageId === column.stage.id}
+              onCompose={() => setComposingStageId(column.stage.id)}
+              onCloseCompose={() => setComposingStageId(null)}
+              showFirstProject={boardIsEmpty && column.stage.id === firstStageId}
+            />
+          ))}
         </div>
-      </DragDropContext>
+      </div>
     </>
   )
 }
