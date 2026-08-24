@@ -1,4 +1,4 @@
-import type { ContentItem, ContentType, Platform } from "@blomstr/types"
+import type { ContentItem, ContentType, Platform, WorkspaceRole } from "@blomstr/types"
 
 /** Display strings and formatters shared by the board and the project page. */
 
@@ -30,6 +30,28 @@ export const platformLabels: Record<Platform, string> = {
 */
 export const contentTypes = Object.keys(typeLabels) as ContentType[]
 export const platforms = Object.keys(platformLabels) as Platform[]
+
+/*
+  Roles in descending order of trust, with what each one actually means.
+
+  Written as sentences rather than a permission matrix because the question
+  people ask is "what can this person do", not "which flags are set".
+*/
+export const roleOrder: WorkspaceRole[] = ["owner", "admin", "editor", "guest"]
+
+export const roleLabels: Record<WorkspaceRole, string> = {
+  owner: "Owner",
+  admin: "Admin",
+  editor: "Editor",
+  guest: "Guest",
+}
+
+export const roleDescriptions: Record<WorkspaceRole, string> = {
+  owner: "Everything, including who is on the team and billing.",
+  admin: "Approves and publishes. Cannot change roles or billing.",
+  editor: "Makes and submits work. Cannot approve their own or anyone else's.",
+  guest: "Only the projects they were invited to. Can comment, not upload.",
+}
 
 export const approvalLabels: Record<ContentItem["approvalState"], string> = {
   draft: "Draft",

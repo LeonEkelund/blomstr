@@ -1,9 +1,7 @@
 import type { ContentItem, Platform } from "@blomstr/types"
 import {
   Archive,
-  Check,
   ChevronDown,
-  MessageSquareReply,
   MoreHorizontal,
   PanelRightClose,
   PanelRightOpen,
@@ -496,20 +494,12 @@ export function ProjectLayout() {
         )}
         <StagePicker item={item} />
 
+        {/*
+          Approving lives in the Review tab, next to the version being
+          approved. Here it floated above every tab — including Notes and
+          Mindmap — with no indication of what it would act on.
+        */}
         <div className="ml-auto flex shrink-0 items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 gap-1.5 px-2 text-xs"
-            disabled
-          >
-            <MessageSquareReply className="size-3.5" />
-            Request changes
-          </Button>
-          <Button size="sm" className="h-7 gap-1.5 px-2 text-xs" disabled>
-            <Check className="size-3.5" />
-            Approve
-          </Button>
           <ProjectMenu item={item} />
           <Button
             variant="ghost"

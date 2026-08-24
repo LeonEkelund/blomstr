@@ -3,13 +3,13 @@ import {
   CalendarClock,
   FolderOpen,
   LayoutDashboard,
-  MessagesSquare,
   Network,
   Scissors,
 } from "lucide-react"
 import { lazy, Suspense } from "react"
 import { useOutletContext } from "react-router-dom"
 import { EmptyState } from "@/components/empty-state"
+import { ReviewPanel } from "@/components/review-panel"
 import { Button } from "@/components/ui/button"
 import { useContent } from "@/hooks/use-content"
 import { typeLabels } from "@/lib/content"
@@ -47,18 +47,7 @@ export function OverviewTab() {
 }
 
 export function ReviewTab() {
-  return (
-    <EmptyState
-      icon={MessagesSquare}
-      title="Nothing to review yet"
-      description="Once a version is uploaded it shows up here with the comment thread, and approval acts on that version."
-      action={
-        <Button variant="outline" size="sm" disabled>
-          Upload a version
-        </Button>
-      }
-    />
-  )
+  return <ReviewPanel project={useProject()} />
 }
 
 /**

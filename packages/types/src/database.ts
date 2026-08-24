@@ -718,6 +718,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      safe_uuid: { Args: { value: string }; Returns: string }
       seed_default_stages: { Args: { ws: string }; Returns: undefined }
     }
     Enums: {

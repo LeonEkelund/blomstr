@@ -4,6 +4,7 @@ import { AppSidebar } from "@/components/layout/app-sidebar"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { useWorkspace } from "@/hooks/use-workspace"
 import { BoardPage } from "@/routes/board"
+import { InvitePage } from "@/routes/invite"
 import { OnboardingPage } from "@/routes/onboarding"
 import { PlaceholderPage } from "@/routes/placeholder"
 import { ProjectLayout } from "@/routes/project/project-layout"
@@ -17,6 +18,7 @@ import {
   ReviewTab,
 } from "@/routes/project/tabs"
 import { SignInPage } from "@/routes/sign-in"
+import { TeamPage } from "@/routes/team"
 
 /**
  * Everything inside the app shell requires a session.
@@ -68,6 +70,8 @@ export function App() {
 
       <Route element={<RequireAuth />}>
         <Route path="/onboarding" element={<OnboardingPage />} />
+        {/* Outside the shell: redeeming happens before you belong anywhere. */}
+        <Route path="/invite/:token" element={<InvitePage />} />
 
         <Route element={<AppShell />}>
           <Route path="/" element={<Navigate to="/projects" replace />} />
@@ -85,7 +89,7 @@ export function App() {
           <Route path="/home" element={<PlaceholderPage title="Home" />} />
           <Route path="/calendar" element={<PlaceholderPage title="Calendar" />} />
           <Route path="/tasks" element={<PlaceholderPage title="My Tasks" />} />
-          <Route path="/team" element={<PlaceholderPage title="Team" />} />
+          <Route path="/team" element={<TeamPage />} />
           <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
           <Route
             path="/integrations"
