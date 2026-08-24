@@ -588,6 +588,27 @@ export type Database = {
       }
     }
     Functions: {
+      approve_version: {
+        Args: { p_note?: string; p_version_id: string }
+        Returns: {
+          approval_state: Database["public"]["Enums"]["approval_state"]
+          asset_id: string
+          body: string | null
+          created_at: string
+          created_by: string
+          drive_file_id: string | null
+          id: string
+          storage_path: string | null
+          version_number: number
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "asset_versions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       can_approve: { Args: { ws: string }; Returns: boolean }
       can_invite_guests: { Args: { ws: string }; Returns: boolean }
       can_manage_people: { Args: { ws: string }; Returns: boolean }
@@ -607,6 +628,32 @@ export type Database = {
           id: string
           stored: string[]
         }[]
+      }
+      create_version: {
+        Args: {
+          p_asset_id: string
+          p_body?: string
+          p_drive_file_id?: string
+          p_storage_path?: string
+        }
+        Returns: {
+          approval_state: Database["public"]["Enums"]["approval_state"]
+          asset_id: string
+          body: string | null
+          created_at: string
+          created_by: string
+          drive_file_id: string | null
+          id: string
+          storage_path: string | null
+          version_number: number
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "asset_versions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       create_workspace: { Args: { name: string }; Returns: string }
       emit_event: {
@@ -648,6 +695,27 @@ export type Database = {
           to: "jobs"
           isOneToOne: false
           isSetofReturn: true
+        }
+      }
+      request_changes: {
+        Args: { p_note: string; p_version_id: string }
+        Returns: {
+          approval_state: Database["public"]["Enums"]["approval_state"]
+          asset_id: string
+          body: string | null
+          created_at: string
+          created_by: string
+          drive_file_id: string | null
+          id: string
+          storage_path: string | null
+          version_number: number
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "asset_versions"
+          isOneToOne: true
+          isSetofReturn: false
         }
       }
       seed_default_stages: { Args: { ws: string }; Returns: undefined }
