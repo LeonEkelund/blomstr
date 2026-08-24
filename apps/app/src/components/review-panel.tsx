@@ -8,6 +8,7 @@ import {
   Upload,
 } from "lucide-react"
 import { type ChangeEvent, useRef, useState } from "react"
+import { CommentThread } from "@/components/comment-thread"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -18,7 +19,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useCurrentMember } from "@/hooks/use-members"
-import { useReviewActions, useVersions, type Version } from "@/hooks/use-review"
+import {
+  useComments,
+  useReviewActions,
+  useVersions,
+  type Version,
+} from "@/hooks/use-review"
 import { approvalLabels, formatLongDate } from "@/lib/content"
 
 function StateBadge({ state }: { state: Version["approvalState"] }) {
@@ -35,6 +41,34 @@ function StateBadge({ state }: { state: Version["approvalState"] }) {
     >
       {approvalLabels[state]}
     </Badge>
+  )
+}
+
+/** The Review tab's slice of the thread: just this version. */
+function VersionThread({
+  version,
+  contentItemId,
+}: {
+  version: Version
+  contentItemId: string
+}) {
+  const { comments } = useComments(version.id)
+  const { comment } = useReviewActions(contentItemId)
+
+  return (
+    <CommentThread
+      // Remounts per version, so the draft and scroll position do not follow
+      // you from one version's conversation into another's.
+      key={version.id}
+      className="hidden w-80 shrink-0 border-l xl:flex"
+      comments={comments}
+      pending={comment.isPending}
+      placeholder={`Comment on V${version.number}`}
+      emptyText={`No comments on V${version.number} yet.`}
+      onSend={(body) =>
+        comment.mutate({ subject: { type: "asset_version", id: version.id }, body })
+      }
+    />
   )
 }
 
@@ -267,18 +301,30 @@ export function ReviewPanel({ project }: { project: ContentItem }) {
             </div>
           )}
 
-          <div className="min-h-0 flex-1 overflow-auto p-6">
-            {current?.url ? (
-              <img
-                src={current.url}
-                alt={`Version ${current.number}`}
-                className="mx-auto max-h-full rounded-lg border bg-card"
-              />
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                No preview for this version.
-              </p>
-            )}
+          <div className="flex min-h-0 flex-1">
+            <div className="min-h-0 flex-1 overflow-auto p-6">
+              {current?.url ? (
+                <img
+                  src={current.url}
+                  alt={`Version ${current.number}`}
+                  className="mx-auto max-h-full rounded-lg border bg-card"
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No preview for this version.
+                </p>
+              )}
+            </div>
+
+            {/*
+              The thread sits beside the work, not under it.
+
+              Requesting changes writes its note here, so this is where an
+              editor finds out *why* something came back — without it they see
+              the state and none of the reason, which sends the conversation
+              somewhere else.
+            */}
+            {current && <VersionThread version={current} contentItemId={project.id} />}
           </div>
         </>
       )}

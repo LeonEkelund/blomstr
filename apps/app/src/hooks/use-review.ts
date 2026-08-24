@@ -129,6 +129,107 @@ export function useVersions(contentItemId: string) {
   return { versions, loading: isPending }
 }
 
+export interface Comment {
+  id: string
+  body: string
+  authorId: string
+  createdAt: string
+  /** Null when the comment is about the project rather than a version. */
+  versionNumber: number | null
+}
+
+/** What a comment hangs off — a version, or the project itself. */
+export type Subject =
+  | { type: "asset_version"; id: string }
+  | { type: "content_item"; id: string }
+
+/**
+ * The thread on one version.
+ *
+ * Requesting changes writes its note here rather than into a field of its own,
+ * so the reason for sending something back sits in the same place as anything
+ * else said about it — and the reply is just another comment.
+ */
+export function useComments(versionId: string | undefined) {
+  const { data: comments = [] } = useQuery({
+    queryKey: ["comments", versionId],
+    enabled: Boolean(versionId),
+    queryFn: async (): Promise<Comment[]> => {
+      const { data, error } = await supabase
+        .from("comments")
+        .select("*")
+        .eq("subject_type", "asset_version")
+        .eq("subject_id", versionId ?? "")
+        .order("created_at")
+      if (error) throw error
+
+      return data.map((c) => ({
+        id: c.id,
+        body: c.body,
+        authorId: c.author_id,
+        createdAt: c.created_at,
+        versionNumber: null,
+      }))
+    },
+  })
+
+  return { comments }
+}
+
+/**
+ * Everything said about a project, in one thread.
+ *
+ * Comments on the project and comments on each of its versions, merged by
+ * time. Two separate conversations would mean every message starts with
+ * deciding where to put it, and half the context ending up wherever you are
+ * not looking — so there is one thread, and the Review tab simply shows a
+ * slice of it.
+ */
+export function useProjectThread(contentItemId: string) {
+  const { data: comments = [], isPending } = useQuery({
+    queryKey: ["thread", contentItemId],
+    queryFn: async (): Promise<Comment[]> => {
+      const { data: assets, error: assetError } = await supabase
+        .from("assets")
+        .select("id")
+        .eq("content_item_id", contentItemId)
+      if (assetError) throw assetError
+
+      const { data: versions, error: versionError } = assets.length
+        ? await supabase
+            .from("asset_versions")
+            .select("id, version_number")
+            .in(
+              "asset_id",
+              assets.map((a) => a.id),
+            )
+        : { data: [], error: null }
+      if (versionError) throw versionError
+
+      const versionNumberById = new Map(
+        (versions ?? []).map((v) => [v.id, v.version_number]),
+      )
+
+      const { data, error } = await supabase
+        .from("comments")
+        .select("*")
+        .in("subject_id", [contentItemId, ...versionNumberById.keys()])
+        .order("created_at")
+      if (error) throw error
+
+      return data.map((c) => ({
+        id: c.id,
+        body: c.body,
+        authorId: c.author_id,
+        createdAt: c.created_at,
+        versionNumber: versionNumberById.get(c.subject_id) ?? null,
+      }))
+    },
+  })
+
+  return { comments, loading: isPending }
+}
+
 /**
  * Upload, then record.
  *
@@ -149,6 +250,9 @@ export function useReviewActions(contentItemId: string) {
   function refresh() {
     queryClient.invalidateQueries({ queryKey: ["versions", contentItemId] })
     queryClient.invalidateQueries({ queryKey: ["content_items", workspace?.id] })
+    // Requesting changes writes a comment, so both views of the thread are stale.
+    queryClient.invalidateQueries({ queryKey: ["comments"] })
+    queryClient.invalidateQueries({ queryKey: ["thread", contentItemId] })
   }
 
   const upload = useMutation({
@@ -188,6 +292,25 @@ export function useReviewActions(contentItemId: string) {
     onSuccess: refresh,
   })
 
+  /*
+    Anyone who can see the version can reply — including guests, who cannot
+    upload but are often the reason a version exists. The policy on comments
+    resolves through the same read rule as the project itself.
+  */
+  const comment = useMutation({
+    mutationFn: async ({ subject, body }: { subject: Subject; body: string }) => {
+      if (!workspace) throw new Error("no workspace")
+      const { error } = await supabase.from("comments").insert({
+        workspace_id: workspace.id,
+        subject_type: subject.type,
+        subject_id: subject.id,
+        body: body.trim(),
+      })
+      if (error) throw error
+    },
+    onSuccess: refresh,
+  })
+
   const requestChanges = useMutation({
     mutationFn: async ({ versionId, note }: { versionId: string; note: string }) => {
       const { error } = await supabase.rpc("request_changes", {
@@ -199,5 +322,5 @@ export function useReviewActions(contentItemId: string) {
     onSuccess: refresh,
   })
 
-  return { upload, approve, requestChanges }
+  return { upload, approve, requestChanges, comment }
 }

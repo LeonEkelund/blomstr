@@ -1,17 +1,13 @@
 import type { ContentItem } from "@blomstr/types"
-import {
-  CalendarClock,
-  FolderOpen,
-  LayoutDashboard,
-  Network,
-  Scissors,
-} from "lucide-react"
+import { CalendarClock, FolderOpen, Network, Scissors } from "lucide-react"
 import { lazy, Suspense } from "react"
 import { useOutletContext } from "react-router-dom"
+import { CommentThread } from "@/components/comment-thread"
 import { EmptyState } from "@/components/empty-state"
 import { ReviewPanel } from "@/components/review-panel"
 import { Button } from "@/components/ui/button"
 import { useContent } from "@/hooks/use-content"
+import { useProjectThread, useReviewActions } from "@/hooks/use-review"
 import { typeLabels } from "@/lib/content"
 
 /** Every tab receives the project from the layout's Outlet context. */
@@ -37,11 +33,35 @@ const NotesEditor = lazy(() =>
  * belongs in the rail.
  */
 export function OverviewTab() {
+  const project = useProject()
+  const { comments } = useProjectThread(project.id)
+  const { comment } = useReviewActions(project.id)
+
+  /*
+    The whole conversation, not a summary.
+
+    Version comments appear here too, tagged with which version they were
+    about — so this is the one place to catch up, and the Review tab is a
+    focused slice of the same thread rather than a second inbox.
+
+    Status, dates and assignees stay in the rail: this answers "what has been
+    said", not "what is this project".
+  */
   return (
-    <EmptyState
-      icon={LayoutDashboard}
-      title="Nothing to summarise yet"
-      description="Where this project stands, what it is waiting on, and the last few things that happened — with whatever needs you next surfaced first."
+    <CommentThread
+      /*
+        Capped and centred rather than filling the tab: a message stretched
+        across the full width becomes one long line, and the eye loses the
+        start of the next one. Same reason the notes editor has a measure.
+      */
+      className="mx-auto w-full max-w-2xl flex-1"
+      comments={comments}
+      pending={comment.isPending}
+      placeholder="Add a comment"
+      emptyText="Nothing said about this project yet. Anything not tied to a specific version goes here — the brief, a deadline, a change of plan."
+      onSend={(body) =>
+        comment.mutate({ subject: { type: "content_item", id: project.id }, body })
+      }
     />
   )
 }

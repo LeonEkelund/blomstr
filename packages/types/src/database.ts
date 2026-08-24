@@ -408,6 +408,73 @@ export type Database = {
           },
         ]
       }
+      invites: {
+        Row: {
+          content_item_id: string | null
+          created_at: string
+          created_by: string
+          email: string | null
+          expires_at: string
+          id: string
+          max_uses: number
+          revoked_at: string | null
+          role: Database["public"]["Enums"]["workspace_role"]
+          token_hash: string
+          used_count: number
+          workspace_id: string
+        }
+        Insert: {
+          content_item_id?: string | null
+          created_at?: string
+          created_by?: string
+          email?: string | null
+          expires_at?: string
+          id?: string
+          max_uses?: number
+          revoked_at?: string | null
+          role?: Database["public"]["Enums"]["workspace_role"]
+          token_hash: string
+          used_count?: number
+          workspace_id: string
+        }
+        Update: {
+          content_item_id?: string | null
+          created_at?: string
+          created_by?: string
+          email?: string | null
+          expires_at?: string
+          id?: string
+          max_uses?: number
+          revoked_at?: string | null
+          role?: Database["public"]["Enums"]["workspace_role"]
+          token_hash?: string
+          used_count?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invites_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_item_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invites_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invites_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           attempts: number
@@ -586,6 +653,70 @@ export type Database = {
           },
         ]
       }
+      invites_listing: {
+        Row: {
+          content_item_id: string | null
+          created_at: string | null
+          created_by: string | null
+          email: string | null
+          expires_at: string | null
+          id: string | null
+          max_uses: number | null
+          revoked_at: string | null
+          role: Database["public"]["Enums"]["workspace_role"] | null
+          used_count: number | null
+          workspace_id: string | null
+        }
+        Insert: {
+          content_item_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          expires_at?: string | null
+          id?: string | null
+          max_uses?: number | null
+          revoked_at?: string | null
+          role?: Database["public"]["Enums"]["workspace_role"] | null
+          used_count?: number | null
+          workspace_id?: string | null
+        }
+        Update: {
+          content_item_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          expires_at?: string | null
+          id?: string | null
+          max_uses?: number | null
+          revoked_at?: string | null
+          role?: Database["public"]["Enums"]["workspace_role"] | null
+          used_count?: number | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invites_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_item_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invites_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invites_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       approve_version: {
@@ -628,6 +759,17 @@ export type Database = {
           id: string
           stored: string[]
         }[]
+      }
+      create_invite: {
+        Args: {
+          p_content_item_id?: string
+          p_email?: string
+          p_expires_in?: string
+          p_max_uses?: number
+          p_role?: Database["public"]["Enums"]["workspace_role"]
+          p_workspace_id?: string
+        }
+        Returns: string
       }
       create_version: {
         Args: {
@@ -697,6 +839,11 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      redeem_invite: { Args: { p_token: string }; Returns: string }
+      remove_member: {
+        Args: { p_user_id: string; p_workspace_id: string }
+        Returns: undefined
+      }
       request_changes: {
         Args: { p_note: string; p_version_id: string }
         Returns: {
@@ -718,8 +865,17 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      revoke_invite: { Args: { p_invite_id: string }; Returns: undefined }
       safe_uuid: { Args: { value: string }; Returns: string }
       seed_default_stages: { Args: { ws: string }; Returns: undefined }
+      set_member_role: {
+        Args: {
+          p_role: Database["public"]["Enums"]["workspace_role"]
+          p_user_id: string
+          p_workspace_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       approval_state: "draft" | "in_review" | "changes_requested" | "approved"
