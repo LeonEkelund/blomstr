@@ -92,9 +92,6 @@
   --mindmap-status: oklch(1 0 0 / 88%);
   --mindmap-status-foreground: oklch(0.439 0 0);
   --mindmap-error: oklch(0.577 0.245 27.325);
-  --project-rail-tab-hover: oklch(0.96 0 0);
-  --project-rail-tab-active: oklch(0.9 0 0);
-  --project-rail-tab-active-foreground: oklch(0.145 0 0);
 }
 
 .dark {
@@ -142,9 +139,6 @@
   --mindmap-status: oklch(0.235 0 0 / 88%);
   --mindmap-status-foreground: oklch(0.72 0 0);
   --mindmap-error: oklch(0.704 0.191 22.216);
-  --project-rail-tab-hover: oklch(0.27 0 0);
-  --project-rail-tab-active: oklch(0.34 0 0);
-  --project-rail-tab-active-foreground: oklch(0.96 0 0);
 }
 
 @layer base {
@@ -170,6 +164,273 @@
   someone wrote, not as a form field with rich text bolted on.
 */
 @layer components {
+  .home-scroll {
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .home-shell {
+    width: min(100%, 76rem);
+    margin-inline: auto;
+    padding: clamp(2rem, 5vw, 4.5rem) clamp(1.25rem, 4vw, 3.5rem) 5rem;
+  }
+
+  .home-intro {
+    margin-bottom: clamp(2rem, 4vw, 3.25rem);
+  }
+
+  .home-intro h1 {
+    margin-top: 0.25rem;
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 600;
+    letter-spacing: -0.045em;
+    line-height: 1.05;
+  }
+
+  .home-intro > p:last-child {
+    margin-top: 0.75rem;
+    color: var(--muted-foreground);
+    font-size: 0.9375rem;
+  }
+
+  .home-date {
+    color: var(--muted-foreground);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+
+  .home-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.78fr);
+    gap: 1.25rem;
+    align-items: start;
+  }
+
+  .home-panel {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) * 1.8);
+    background: var(--card);
+    box-shadow: 0 1px 2px color-mix(in oklab, var(--foreground) 4%, transparent);
+  }
+
+  .home-attention {
+    grid-column: 1 / -1;
+  }
+
+  .home-panel-header {
+    padding: 1.25rem 1.25rem 1rem;
+  }
+
+  .home-panel-header h2 {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    letter-spacing: -0.012em;
+  }
+
+  .home-panel-header p {
+    margin-top: 0.25rem;
+    color: var(--muted-foreground);
+    font-size: 0.75rem;
+    line-height: 1.45;
+  }
+
+  .home-list > li {
+    border-top: 1px solid var(--border);
+  }
+
+  .home-attention-row,
+  .home-upcoming-row,
+  .home-activity-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 4.25rem;
+    padding: 0.75rem 1.25rem;
+    transition: background-color 150ms;
+  }
+
+  .home-attention-row:hover,
+  .home-upcoming-row:hover,
+  a.home-activity-row:hover {
+    background: var(--accent);
+  }
+
+  .home-attention-icon,
+  .home-caught-up-icon {
+    display: grid;
+    width: 2.25rem;
+    height: 2.25rem;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 999px;
+  }
+
+  .home-attention-icon svg,
+  .home-caught-up-icon svg {
+    width: 1rem;
+    height: 1rem;
+    stroke-width: 1.75;
+  }
+
+  .home-attention-icon[data-tone="review"] {
+    background: var(--muted);
+    color: var(--foreground);
+  }
+
+  .home-attention-icon[data-tone="changes"] {
+    background: var(--secondary);
+    color: var(--secondary-foreground);
+  }
+
+  .home-attention-icon[data-tone="overdue"] {
+    background: color-mix(in oklab, var(--destructive) 12%, transparent);
+    color: var(--destructive);
+  }
+
+  .home-row-title {
+    overflow: hidden;
+    color: var(--foreground);
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .home-row-meta {
+    overflow: hidden;
+    margin-top: 0.2rem;
+    color: var(--muted-foreground);
+    font-size: 0.75rem;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .home-row-arrow {
+    width: 0.875rem;
+    height: 0.875rem;
+    flex: 0 0 auto;
+    color: var(--muted-foreground);
+    opacity: 0;
+    transition: opacity 150ms;
+  }
+
+  a:hover > .home-row-arrow {
+    opacity: 1;
+  }
+
+  .home-caught-up {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    min-height: 5.25rem;
+    border-top: 1px solid var(--border);
+    padding: 1rem 1.25rem;
+  }
+
+  .home-caught-up-icon {
+    background: var(--muted);
+    color: var(--foreground);
+  }
+
+  .home-caught-up p {
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .home-caught-up span:not(.home-caught-up-icon) {
+    display: block;
+    margin-top: 0.2rem;
+    color: var(--muted-foreground);
+    font-size: 0.75rem;
+  }
+
+  .home-date-tile {
+    display: grid;
+    width: 2.5rem;
+    height: 2.75rem;
+    flex: 0 0 auto;
+    place-content: center;
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) * 0.8);
+    background: var(--background);
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1;
+    text-align: center;
+  }
+
+  .home-date-tile span {
+    margin-bottom: 0.25rem;
+    color: var(--muted-foreground);
+    font-size: 0.5625rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .home-activity-avatar {
+    width: 1.875rem;
+    height: 1.875rem;
+    flex: 0 0 auto;
+  }
+
+  .home-activity-avatar span {
+    font-size: 0.625rem;
+  }
+
+  .home-activity-copy {
+    color: var(--muted-foreground);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+  }
+
+  .home-activity-copy > span {
+    color: var(--foreground);
+    font-weight: 500;
+  }
+
+  .home-panel-empty,
+  .home-error {
+    border-top: 1px solid var(--border);
+    padding: 1.5rem 1.25rem;
+    color: var(--muted-foreground);
+    font-size: 0.8125rem;
+  }
+
+  .home-error {
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) * 1.4);
+    background: var(--card);
+  }
+
+  .home-skeleton-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 4.25rem;
+    border-top: 1px solid var(--border);
+    padding: 0.75rem 1.25rem;
+  }
+
+  @media (max-width: 800px) {
+    .home-shell {
+      padding-top: 2.5rem;
+    }
+
+    .home-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .home-attention {
+      grid-column: auto;
+    }
+  }
+
   .project-rail-tab {
     border: 1px solid transparent;
     border-radius: calc(var(--radius) * 0.8);
@@ -184,14 +445,14 @@
   }
 
   .project-rail-tab:hover {
-    background: var(--project-rail-tab-hover);
+    background: var(--accent);
     color: var(--foreground);
   }
 
   .project-rail-tab[data-active="true"] {
     border-color: var(--border);
-    background: var(--project-rail-tab-active);
-    color: var(--project-rail-tab-active-foreground);
+    background: color-mix(in oklab, var(--foreground) 10%, var(--background));
+    color: var(--foreground);
   }
 
   .mindmap-canvas {

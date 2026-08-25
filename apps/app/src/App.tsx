@@ -4,6 +4,7 @@ import { AppSidebar } from "@/components/layout/app-sidebar"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { useWorkspace } from "@/hooks/use-workspace"
 import { BoardPage } from "@/routes/board"
+import { HomePage } from "@/routes/home"
 import { InvitePage } from "@/routes/invite"
 import { OnboardingPage } from "@/routes/onboarding"
 import { PlaceholderPage } from "@/routes/placeholder"
@@ -74,7 +75,7 @@ export function App() {
         <Route path="/invite/:token" element={<InvitePage />} />
 
         <Route element={<AppShell />}>
-          <Route path="/" element={<Navigate to="/projects" replace />} />
+          <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="/projects" element={<BoardPage />} />
           <Route path="/projects/:projectId" element={<ProjectLayout />}>
             <Route index element={<Navigate to="overview" replace />} />
@@ -86,7 +87,7 @@ export function App() {
             <Route path="review" element={<ReviewTab />} />
             <Route path="publish" element={<PublishTab />} />
           </Route>
-          <Route path="/home" element={<PlaceholderPage title="Home" />} />
+          <Route path="/home" element={<HomePage />} />
           <Route path="/calendar" element={<PlaceholderPage title="Calendar" />} />
           <Route path="/tasks" element={<PlaceholderPage title="My Tasks" />} />
           <Route path="/team" element={<TeamPage />} />
