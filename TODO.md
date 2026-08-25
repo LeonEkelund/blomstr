@@ -136,7 +136,6 @@ Each is a `PlaceholderPage` or an `EmptyState`:
 | Overview tab | Wants the event log (§1) to have anything to summarise |
 | Notes tab | Plain text on the project; no schema yet |
 | Files tab | Drive integration |
-| Mindmap tab | Canvas — React Flow, much later |
 | Publish tab | Needs the `jobs` queue wired to Edge Functions |
 
 ---

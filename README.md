@@ -28,7 +28,7 @@ version, so a project's status reads `Draft` and always will. See
 | Auth — sign-in, session, onboarding | Done |
 | Schema and RLS | Migrations 01–10 applied |
 | Kanban board | Drag-and-drop, persisted |
-| Project page — inline edit, archive, notes | Done |
+| Project page — inline edit, archive, notes, mindmap | Done |
 | RPCs — approval, publishing, invites | **Not written** |
 | Review, files, publish tabs | Empty states |
 | Home, calendar, tasks, team | Placeholders |

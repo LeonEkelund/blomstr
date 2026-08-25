@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
+@import "@excalidraw/excalidraw/index.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -87,6 +88,10 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --mindmap-canvas: oklch(0.97 0 0);
+  --mindmap-status: oklch(1 0 0 / 88%);
+  --mindmap-status-foreground: oklch(0.439 0 0);
+  --mindmap-error: oklch(0.577 0.245 27.325);
 }
 
 .dark {
@@ -130,6 +135,10 @@
   --sidebar-accent-foreground: oklch(0.96 0 0);
   --sidebar-border: oklch(1 0 0 / 12%);
   --sidebar-ring: oklch(0.556 0 0);
+  --mindmap-canvas: oklch(0.19 0 0);
+  --mindmap-status: oklch(0.235 0 0 / 88%);
+  --mindmap-status-foreground: oklch(0.72 0 0);
+  --mindmap-error: oklch(0.704 0.191 22.216);
 }
 
 @layer base {
@@ -155,6 +164,49 @@
   someone wrote, not as a form field with rich text bolted on.
 */
 @layer components {
+  .mindmap-canvas {
+    min-height: 0;
+    flex: 1;
+    background: var(--mindmap-canvas);
+  }
+
+  .mindmap-message {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    color: var(--muted-foreground);
+    font-size: 0.875rem;
+    text-align: center;
+  }
+
+  .mindmap-message-error,
+  .mindmap-save-state-error {
+    color: var(--mindmap-error);
+  }
+
+  .mindmap-save-state {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--mindmap-status);
+    color: var(--mindmap-status-foreground);
+    padding: 0.375rem 0.625rem;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    line-height: 1rem;
+    backdrop-filter: blur(8px);
+  }
+
+  /* Excalidraw owns this subtree, so bridge the app globals into its theme. */
+  .mindmap-canvas .excalidraw {
+    --color-primary: var(--primary);
+    --color-primary-darker: var(--foreground);
+    --color-primary-darkest: var(--foreground);
+    font-family: var(--font-sans);
+  }
+
   .ProseMirror {
     @apply text-[0.9375rem] leading-[1.75] text-foreground;
   }

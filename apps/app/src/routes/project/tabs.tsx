@@ -1,5 +1,5 @@
 import type { ContentItem } from "@blomstr/types"
-import { CalendarClock, FolderOpen, Network, Scissors } from "lucide-react"
+import { CalendarClock, FolderOpen, Scissors } from "lucide-react"
 import { lazy, Suspense } from "react"
 import { useOutletContext } from "react-router-dom"
 import { CommentThread } from "@/components/comment-thread"
@@ -22,6 +22,14 @@ function useProject() {
 */
 const NotesEditor = lazy(() =>
   import("@/components/notes-editor").then((m) => ({ default: m.NotesEditor })),
+)
+
+// Excalidraw is the heaviest tab dependency. Keep it out of the board bundle
+// and only download it when someone opens a project's canvas.
+const MindmapEditor = lazy(() =>
+  import("@/components/mindmap-editor").then((m) => ({
+    default: m.MindmapEditor,
+  })),
 )
 
 /**
@@ -148,17 +156,12 @@ export function RepurposedTab() {
 }
 
 export function MindmapTab() {
+  const project = useProject()
+
   return (
-    <EmptyState
-      icon={Network}
-      title="No mindmap yet"
-      description="A canvas for planning this project — sticky notes, arrows, whatever gets the idea out. Scoped to this project, so access follows it."
-      action={
-        <Button variant="outline" size="sm" disabled>
-          Open canvas
-        </Button>
-      }
-    />
+    <Suspense fallback={<div className="mindmap-message">Opening canvas…</div>}>
+      <MindmapEditor project={project} />
+    </Suspense>
   )
 }
 
