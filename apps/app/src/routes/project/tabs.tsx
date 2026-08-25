@@ -1,14 +1,12 @@
 import type { ContentItem } from "@blomstr/types"
-import { CalendarClock, FolderOpen, Scissors } from "lucide-react"
+import { ArrowRight, CalendarClock, FolderOpen, Scissors } from "lucide-react"
 import { lazy, Suspense } from "react"
-import { useOutletContext } from "react-router-dom"
-import { CommentThread } from "@/components/comment-thread"
+import { Link, useOutletContext } from "react-router-dom"
 import { EmptyState } from "@/components/empty-state"
 import { ReviewPanel } from "@/components/review-panel"
 import { Button } from "@/components/ui/button"
 import { useContent } from "@/hooks/use-content"
-import { useProjectThread, useReviewActions } from "@/hooks/use-review"
-import { typeLabels } from "@/lib/content"
+import { approvalLabels, typeLabels } from "@/lib/content"
 
 /** Every tab receives the project from the layout's Outlet context. */
 function useProject() {
@@ -42,35 +40,48 @@ const MindmapEditor = lazy(() =>
  */
 export function OverviewTab() {
   const project = useProject()
-  const { comments } = useProjectThread(project.id)
-  const { comment } = useReviewActions(project.id)
+  const next = {
+    draft: {
+      copy: "The work is still taking shape. Add a version when it is ready for feedback.",
+      label: "Open review",
+      to: "../review",
+    },
+    in_review: {
+      copy: "A version is waiting for a decision. Review it alongside the team's feedback.",
+      label: "Review version",
+      to: "../review",
+    },
+    changes_requested: {
+      copy: "Changes were requested on the latest version. Open the review to see what needs attention.",
+      label: "See requested changes",
+      to: "../review",
+    },
+    approved: {
+      copy: "The latest version is approved. The project can move toward publishing.",
+      label: "Open publishing",
+      to: "../publish",
+    },
+  }[project.approvalState]
 
-  /*
-    The whole conversation, not a summary.
-
-    Version comments appear here too, tagged with which version they were
-    about — so this is the one place to catch up, and the Review tab is a
-    focused slice of the same thread rather than a second inbox.
-
-    Status, dates and assignees stay in the rail: this answers "what has been
-    said", not "what is this project".
-  */
   return (
-    <CommentThread
-      /*
-        Capped and centred rather than filling the tab: a message stretched
-        across the full width becomes one long line, and the eye loses the
-        start of the next one. Same reason the notes editor has a measure.
-      */
-      className="mx-auto w-full max-w-2xl flex-1"
-      comments={comments}
-      pending={comment.isPending}
-      placeholder="Add a comment"
-      emptyText="Nothing said about this project yet. Anything not tied to a specific version goes here — the brief, a deadline, a change of plan."
-      onSend={(body) =>
-        comment.mutate({ subject: { type: "content_item", id: project.id }, body })
-      }
-    />
+    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-6 py-16">
+      <p className="text-xs font-medium text-muted-foreground">Current status</p>
+      <h2 className="mt-2 text-xl font-semibold tracking-tight">
+        {approvalLabels[project.approvalState]}
+      </h2>
+      <p className="mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground">
+        {next.copy}
+      </p>
+      <Button
+        variant="outline"
+        size="sm"
+        className="mt-5 w-fit"
+        render={<Link to={next.to} relative="path" />}
+      >
+        {next.label}
+        <ArrowRight className="size-3.5" />
+      </Button>
+    </div>
   )
 }
 

@@ -11,9 +11,9 @@ import { cn } from "@/lib/utils"
 /**
  * One conversation, rendered two ways.
  *
- * The Review tab passes the current version's messages; Overview passes every
- * message about the project, with version ones tagged. Same component, because
- * it is the same thread — only the slice differs.
+ * The Review tab passes the current version's messages; the project rail
+ * passes every message about the project, with version ones tagged. Same
+ * component, because it is the same thread — only the slice differs.
  */
 export function CommentThread({
   comments,

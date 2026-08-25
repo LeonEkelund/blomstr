@@ -7,7 +7,7 @@ import type {
   BinaryFiles,
   ExcalidrawInitialDataState,
 } from "@excalidraw/excalidraw/types"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useTheme } from "@/components/theme-provider"
 import { useCurrentMember } from "@/hooks/use-members"
@@ -123,6 +123,7 @@ async function loadMindmap(project: ContentItem) {
 }
 
 export function MindmapEditor({ project }: { project: ContentItem }) {
+  const queryClient = useQueryClient()
   const { resolvedTheme } = useTheme()
   const { member } = useCurrentMember()
   const canEdit = member !== undefined && member.role !== "guest"
@@ -191,9 +192,10 @@ export function MindmapEditor({ project }: { project: ContentItem }) {
       if (saveError) throw saveError
 
       knownFilesRef.current = metadata
+      queryClient.invalidateQueries({ queryKey: ["activity", project.id] })
       setSaveState("saved")
     },
-    [project.id, project.workspaceId],
+    [project.id, project.workspaceId, queryClient],
   )
 
   const flush = useCallback(() => {

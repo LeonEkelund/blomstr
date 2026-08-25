@@ -1,4 +1,5 @@
 import type { ContentItem, Platform } from "@blomstr/types"
+import { formatDistanceToNow } from "date-fns"
 import {
   Archive,
   ChevronDown,
@@ -10,6 +11,7 @@ import {
 } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { Link, NavLink, Outlet, useNavigate, useParams } from "react-router-dom"
+import { CommentThread } from "@/components/comment-thread"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,8 +37,10 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { type ProjectActivity, useProjectActivity } from "@/hooks/use-activity"
 import { useContent } from "@/hooks/use-content"
 import { useMembers } from "@/hooks/use-members"
+import { useProjectThread, useReviewActions } from "@/hooks/use-review"
 import { useStages } from "@/hooks/use-stages"
 import {
   approvalLabels,
@@ -64,6 +68,22 @@ const tabs = [
   { to: "review", label: "Review" },
   { to: "publish", label: "Publish" },
 ]
+
+type RailMode = "details" | "activity" | "chat"
+
+const RAIL_MODE_KEY = "blomstr-project-rail-mode"
+
+function initialRailMode(): RailMode {
+  try {
+    const stored = localStorage.getItem(RAIL_MODE_KEY)
+    if (stored === "details" || stored === "activity" || stored === "chat") {
+      return stored
+    }
+  } catch {
+    // Storage can be unavailable in private browsing; state still works in memory.
+  }
+  return "details"
+}
 
 function StagePicker({ item }: { item: ContentItem }) {
   const { setStage } = useContent()
@@ -379,61 +399,203 @@ function PlatformPicker({ item }: { item: ContentItem }) {
   )
 }
 
-function Rail({ item }: { item: ContentItem }) {
+const fieldLabels: Record<string, string> = {
+  type: "type",
+  notes: "notes",
+  due_date: "due date",
+  publish_date: "publish date",
+  platforms: "platforms",
+}
+
+function joinFields(fields: string[]) {
+  const labels = fields.map((field) => fieldLabels[field] ?? field.replaceAll("_", " "))
+  if (labels.length < 2) return labels[0] ?? "project details"
+  return `${labels.slice(0, -1).join(", ")} and ${labels.at(-1)}`
+}
+
+function activityText(entry: ProjectActivity, stageNames: Map<string, string>) {
+  const version = entry.versionNumber ? `V${entry.versionNumber}` : "a version"
+
+  switch (entry.verb) {
+    case "created":
+      return "created this project"
+    case "moved": {
+      const destination = entry.payload.to_stage_id
+        ? stageNames.get(entry.payload.to_stage_id)
+        : undefined
+      return destination ? `moved this project to ${destination}` : "moved this project"
+    }
+    case "renamed":
+      return "renamed this project"
+    case "updated":
+      return `updated the ${joinFields(entry.payload.fields ?? [])}`
+    case "archived":
+      return "archived this project"
+    case "restored":
+      return "restored this project"
+    case "submitted_for_review":
+      return `submitted ${version} for review`
+    case "approved":
+      return `approved ${version}`
+    case "changes_requested":
+      return `requested changes on ${version}`
+    case "commented":
+      return entry.versionNumber ? `commented on ${version}` : "commented"
+    case "mindmap_created":
+      return "started the mindmap"
+    case "invite_created":
+      return "created a project invite"
+    default:
+      return entry.verb.replaceAll("_", " ")
+  }
+}
+
+function ActivityLog({ item }: { item: ContentItem }) {
+  const { activity, loading } = useProjectActivity(item.id)
+  const { stages } = useStages()
+  const stageNames = new Map(stages.map((stage) => [stage.id, stage.name]))
+
+  return (
+    <section className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+      {loading ? (
+        <p className="text-xs text-muted-foreground">Loading activity…</p>
+      ) : activity.length === 0 ? (
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          No activity recorded yet.
+        </p>
+      ) : (
+        <ol className="space-y-3">
+          {activity.map((entry) => (
+            <li key={entry.id} className="flex gap-2.5">
+              <Avatar className="mt-0.5 size-5 shrink-0">
+                <AvatarFallback className="text-[9px]">
+                  {initials(entry.actorName)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 text-xs leading-relaxed">
+                <p>
+                  <span className="font-medium">{entry.actorName}</span>{" "}
+                  <span className="text-muted-foreground">
+                    {activityText(entry, stageNames)}
+                  </span>
+                </p>
+                <time
+                  dateTime={entry.createdAt}
+                  title={new Date(entry.createdAt).toLocaleString()}
+                  className="text-[11px] text-muted-foreground/70"
+                >
+                  {formatDistanceToNow(new Date(entry.createdAt), { addSuffix: true })}
+                </time>
+              </div>
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
+  )
+}
+
+function ProjectChat({ item }: { item: ContentItem }) {
+  const { comments } = useProjectThread(item.id)
+  const { comment } = useReviewActions(item.id)
+
+  return (
+    <CommentThread
+      className="min-h-0 flex-1"
+      comments={comments}
+      pending={comment.isPending}
+      placeholder="Add a comment"
+      emptyText="Nothing said yet. Use this thread for anything that applies to the project as a whole."
+      onSend={(body) =>
+        comment.mutate({ subject: { type: "content_item", id: item.id }, body })
+      }
+    />
+  )
+}
+
+const railModes: { value: RailMode; label: string }[] = [
+  { value: "details", label: "Details" },
+  { value: "activity", label: "Activity" },
+  { value: "chat", label: "Chat" },
+]
+
+function Rail({
+  item,
+  mode,
+  onModeChange,
+}: {
+  item: ContentItem
+  mode: RailMode
+  onModeChange: (mode: RailMode) => void
+}) {
   const { members } = useMembers()
   const assignees = members.filter((m) => item.assigneeIds.includes(m.id))
 
   return (
-    <aside className="hidden w-72 shrink-0 overflow-y-auto border-l py-4 lg:block">
-      <RailField label="Status">
-        <Badge variant="secondary" className="font-normal">
-          {approvalLabels[item.approvalState]}
-        </Badge>
-      </RailField>
+    <aside className="hidden min-h-0 w-80 shrink-0 flex-col border-l lg:flex">
+      <nav className="grid shrink-0 grid-cols-3 border-b p-2" aria-label="Project panel">
+        {railModes.map((railMode) => (
+          <button
+            key={railMode.value}
+            type="button"
+            aria-pressed={mode === railMode.value}
+            data-active={mode === railMode.value}
+            onClick={() => onModeChange(railMode.value)}
+            className="project-rail-tab"
+          >
+            {railMode.label}
+          </button>
+        ))}
+      </nav>
 
-      <RailField label="Assignees">
-        {assignees.length === 0 ? (
-          <span className="text-muted-foreground">Unassigned</span>
-        ) : (
-          <div className="flex flex-wrap gap-1.5">
-            {assignees.map((m) => (
-              <span key={m.id} className="flex items-center gap-1.5">
-                <Avatar className="size-5">
-                  <AvatarFallback className="text-[9px]">
-                    {initials(m.name)}
-                  </AvatarFallback>
-                </Avatar>
-                {m.name}
-              </span>
-            ))}
-          </div>
-        )}
-      </RailField>
+      {mode === "details" && (
+        <div className="min-h-0 flex-1 overflow-y-auto py-4">
+          <RailField label="Status">
+            <Badge variant="secondary" className="font-normal">
+              {approvalLabels[item.approvalState]}
+            </Badge>
+          </RailField>
 
-      <RailField label="Type">
-        <TypePicker item={item} />
-      </RailField>
+          <RailField label="Assignees">
+            {assignees.length === 0 ? (
+              <span className="text-muted-foreground">Unassigned</span>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {assignees.map((m) => (
+                  <span key={m.id} className="flex items-center gap-1.5">
+                    <Avatar className="size-5">
+                      <AvatarFallback className="text-[9px]">
+                        {initials(m.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    {m.name}
+                  </span>
+                ))}
+              </div>
+            )}
+          </RailField>
 
-      <RailField label="Due">
-        <DateField item={item} field="dueAt" empty="No date" />
-      </RailField>
+          <RailField label="Type">
+            <TypePicker item={item} />
+          </RailField>
 
-      <RailField label="Publish">
-        <DateField item={item} field="publishAt" empty="Not scheduled" />
-      </RailField>
+          <RailField label="Due">
+            <DateField item={item} field="dueAt" empty="No date" />
+          </RailField>
 
-      <RailField label="Platforms">
-        <PlatformPicker item={item} />
-      </RailField>
+          <RailField label="Publish">
+            <DateField item={item} field="publishAt" empty="Not scheduled" />
+          </RailField>
 
-      <RailField label="Created">{formatLongDate(item.createdAt)}</RailField>
+          <RailField label="Platforms">
+            <PlatformPicker item={item} />
+          </RailField>
 
-      <div className="mt-4 border-t px-4 pt-4">
-        <h3 className="text-xs font-medium text-muted-foreground">Activity</h3>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Every change to this project will appear here once the event log exists.
-        </p>
-      </div>
+          <RailField label="Created">{formatLongDate(item.createdAt)}</RailField>
+        </div>
+      )}
+      {mode === "activity" && <ActivityLog item={item} />}
+      {mode === "chat" && <ProjectChat item={item} />}
     </aside>
   )
 }
@@ -442,8 +604,18 @@ export function ProjectLayout() {
   const { projectId } = useParams()
   const { items } = useContent()
   const [railOpen, setRailOpen] = useState(true)
+  const [railMode, setRailMode] = useState<RailMode>(initialRailMode)
 
   const item = items.find((i) => i.id === projectId)
+
+  function changeRailMode(mode: RailMode) {
+    setRailMode(mode)
+    try {
+      localStorage.setItem(RAIL_MODE_KEY, mode)
+    } catch {
+      // The selected panel still persists for this mounted project layout.
+    }
+  }
 
   if (!item) {
     return (
@@ -506,7 +678,7 @@ export function ProjectLayout() {
             size="icon"
             className="hidden size-7 lg:inline-flex"
             onClick={() => setRailOpen((open) => !open)}
-            aria-label={railOpen ? "Hide details" : "Show details"}
+            aria-label={railOpen ? "Hide project panel" : "Show project panel"}
           >
             {railOpen ? (
               <PanelRightClose className="size-4" />
@@ -541,7 +713,7 @@ export function ProjectLayout() {
         <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
           <Outlet context={item} />
         </div>
-        {railOpen && <Rail item={item} />}
+        {railOpen && <Rail item={item} mode={railMode} onModeChange={changeRailMode} />}
       </div>
     </>
   )

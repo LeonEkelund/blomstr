@@ -187,6 +187,8 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       if (context?.previous) queryClient.setQueryData(queryKey, context.previous)
       queryClient.invalidateQueries({ queryKey })
     },
+    onSuccess: (_data, vars) =>
+      queryClient.invalidateQueries({ queryKey: ["activity", vars.id] }),
   })
 
   const create = useMutation({
@@ -258,6 +260,8 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     ...optimistic<{ id: string; patch: ItemPatch }>((current, vars) =>
       current.map((i) => (i.id === vars.id ? { ...i, ...vars.patch } : i)),
     ),
+    onSuccess: (_data, vars) =>
+      queryClient.invalidateQueries({ queryKey: ["activity", vars.id] }),
   })
 
   const archive = useMutation({
@@ -278,6 +282,8 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     ...optimistic<{ id: string }>((current, vars) =>
       current.filter((i) => i.id !== vars.id && !i.ancestorIds.includes(vars.id)),
     ),
+    onSuccess: (_data, vars) =>
+      queryClient.invalidateQueries({ queryKey: ["activity", vars.id] }),
   })
 
   const value = useMemo<ContentContextValue>(() => {

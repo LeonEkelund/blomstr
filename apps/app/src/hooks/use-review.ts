@@ -253,6 +253,7 @@ export function useReviewActions(contentItemId: string) {
     // Requesting changes writes a comment, so both views of the thread are stale.
     queryClient.invalidateQueries({ queryKey: ["comments"] })
     queryClient.invalidateQueries({ queryKey: ["thread", contentItemId] })
+    queryClient.invalidateQueries({ queryKey: ["activity", contentItemId] })
   }
 
   const upload = useMutation({

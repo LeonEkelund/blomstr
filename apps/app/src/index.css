@@ -92,6 +92,9 @@
   --mindmap-status: oklch(1 0 0 / 88%);
   --mindmap-status-foreground: oklch(0.439 0 0);
   --mindmap-error: oklch(0.577 0.245 27.325);
+  --project-rail-tab-hover: oklch(0.96 0 0);
+  --project-rail-tab-active: oklch(0.9 0 0);
+  --project-rail-tab-active-foreground: oklch(0.145 0 0);
 }
 
 .dark {
@@ -139,6 +142,9 @@
   --mindmap-status: oklch(0.235 0 0 / 88%);
   --mindmap-status-foreground: oklch(0.72 0 0);
   --mindmap-error: oklch(0.704 0.191 22.216);
+  --project-rail-tab-hover: oklch(0.27 0 0);
+  --project-rail-tab-active: oklch(0.34 0 0);
+  --project-rail-tab-active-foreground: oklch(0.96 0 0);
 }
 
 @layer base {
@@ -164,6 +170,30 @@
   someone wrote, not as a form field with rich text bolted on.
 */
 @layer components {
+  .project-rail-tab {
+    border: 1px solid transparent;
+    border-radius: calc(var(--radius) * 0.8);
+    padding: 0.375rem 0.5rem;
+    color: var(--muted-foreground);
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition:
+      color 150ms,
+      background-color 150ms,
+      border-color 150ms;
+  }
+
+  .project-rail-tab:hover {
+    background: var(--project-rail-tab-hover);
+    color: var(--foreground);
+  }
+
+  .project-rail-tab[data-active="true"] {
+    border-color: var(--border);
+    background: var(--project-rail-tab-active);
+    color: var(--project-rail-tab-active-foreground);
+  }
+
   .mindmap-canvas {
     min-height: 0;
     flex: 1;
