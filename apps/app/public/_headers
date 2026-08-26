@@ -1,0 +1,7 @@
+# Vite hashes asset filenames, so a given URL's contents never change.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# The entry point must never cache, or users stay pinned to an old build.
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate

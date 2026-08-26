@@ -1,0 +1,6 @@
+# react-router routes on the client, so the host must return index.html for any
+# path it doesn't recognise. Without this, refreshing on /projects — or opening
+# a shared /projects/:id link, which is the whole point — returns a 404.
+#
+# 200, not 301: serve that file *as* the requested URL rather than redirecting.
+/*  /index.html  200
