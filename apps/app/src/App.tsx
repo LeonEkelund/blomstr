@@ -20,6 +20,7 @@ import {
 } from "@/routes/project/tabs"
 import { SignInPage } from "@/routes/sign-in"
 import { TeamPage } from "@/routes/team"
+import { WorkspacePage } from "@/routes/workspace"
 
 /**
  * Everything inside the app shell requires a session.
@@ -91,7 +92,8 @@ export function App() {
           <Route path="/calendar" element={<PlaceholderPage title="Calendar" />} />
           <Route path="/tasks" element={<PlaceholderPage title="My Tasks" />} />
           <Route path="/team" element={<TeamPage />} />
-          <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
+          <Route path="/workspace" element={<WorkspacePage />} />
+          <Route path="/settings" element={<PlaceholderPage title="Account" />} />
           <Route
             path="/integrations"
             element={<PlaceholderPage title="Integrations" />}

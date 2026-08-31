@@ -2,6 +2,7 @@ import { Logo } from "@blomstr/ui"
 import type { LucideIcon } from "lucide-react"
 import {
   BarChart3,
+  Building2,
   CalendarDays,
   ChevronsUpDown,
   CircleCheck,
@@ -12,7 +13,6 @@ import {
   Monitor,
   Moon,
   Plug,
-  Settings,
   SquareKanban,
   Sun,
   Users,
@@ -64,9 +64,10 @@ const primaryNav: NavItem[] = [
   { to: "/analytics", label: "Analytics", icon: BarChart3, soon: true },
 ]
 
-// Settings lives in the account menu instead, so it isn't duplicated here.
+// Workspace-level tools stay separate from the pages used every day.
 const secondaryNav: NavItem[] = [
   { to: "/integrations", label: "Integrations", icon: Plug },
+  { to: "/workspace", label: "Workspace", icon: Building2 },
 ]
 
 /**
@@ -192,10 +193,6 @@ function NavUser() {
             <DropdownMenuItem render={<Link to="/settings" />}>
               <CircleUser />
               Account
-            </DropdownMenuItem>
-            <DropdownMenuItem render={<Link to="/settings" />}>
-              <Settings />
-              Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <ThemeMenuGroup />
