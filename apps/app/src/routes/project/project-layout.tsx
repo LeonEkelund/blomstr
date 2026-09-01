@@ -39,7 +39,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { useProjectActivity } from "@/hooks/use-activity"
 import { useContent } from "@/hooks/use-content"
-import { useMembers } from "@/hooks/use-members"
+import { useCurrentMember, useMembers } from "@/hooks/use-members"
 import { useProjectThread, useReviewActions } from "@/hooks/use-review"
 import { useStages } from "@/hooks/use-stages"
 import { activityText } from "@/lib/activity"
@@ -114,6 +114,61 @@ function StagePicker({ item }: { item: ContentItem }) {
               </DropdownMenuRadioItem>
             ))}
         </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+function AssigneePicker({ item }: { item: ContentItem }) {
+  const { setAssignees } = useContent()
+  const { members } = useMembers()
+  const { member: currentMember } = useCurrentMember()
+  const staff = members.filter((member) => member.role !== "guest")
+  const summary =
+    item.assigneeIds.length === 0
+      ? "Unassigned"
+      : item.assigneeIds.length === 1
+        ? "1 person"
+        : `${item.assigneeIds.length} people`
+
+  if (!currentMember || currentMember.role === "guest") {
+    return <span className="text-muted-foreground">{summary}</span>
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger className="flex min-h-7 w-full items-center rounded-md text-left outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
+        <span className={cn(item.assigneeIds.length === 0 && "text-muted-foreground")}>
+          {summary}
+        </span>
+        <ChevronDown className="ml-auto size-3.5 text-muted-foreground" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-56">
+        {staff.map((member) => {
+          const assigned = item.assigneeIds.includes(member.id)
+          return (
+            <DropdownMenuCheckboxItem
+              key={member.id}
+              checked={assigned}
+              onCheckedChange={(checked) =>
+                setAssignees(
+                  item.id,
+                  checked
+                    ? [...item.assigneeIds, member.id]
+                    : item.assigneeIds.filter((id) => id !== member.id),
+                )
+              }
+              onSelect={(event) => event.preventDefault()}
+            >
+              <Avatar className="size-5">
+                <AvatarFallback className="text-[9px]">
+                  {initials(member.name)}
+                </AvatarFallback>
+              </Avatar>
+              {member.name}
+            </DropdownMenuCheckboxItem>
+          )
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   )
@@ -507,18 +562,20 @@ function Rail({
           </RailField>
 
           <RailField label="Assignees">
-            {assignees.length === 0 ? (
-              <span className="text-muted-foreground">Unassigned</span>
-            ) : (
-              <div className="flex flex-wrap gap-1.5">
-                {assignees.map((m) => (
-                  <span key={m.id} className="flex items-center gap-1.5">
+            <AssigneePicker item={item} />
+            {assignees.length > 0 && (
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {assignees.map((member) => (
+                  <span
+                    key={member.id}
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground"
+                  >
                     <Avatar className="size-5">
                       <AvatarFallback className="text-[9px]">
-                        {initials(m.name)}
+                        {initials(member.name)}
                       </AvatarFallback>
                     </Avatar>
-                    {m.name}
+                    {member.name}
                   </span>
                 ))}
               </div>

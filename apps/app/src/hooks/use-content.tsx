@@ -39,6 +39,8 @@ interface ContentContextValue {
   createItem: (stageId: string, title: string) => void
   /** Patch any directly-editable field. Every rail control calls this. */
   updateItem: (id: string, patch: ItemPatch) => void
+  /** Replace the staff responsible for this deliverable. */
+  setAssignees: (id: string, assigneeIds: string[]) => void
   /**
    * Soft delete — sets `archived_at` on the item and everything under it.
    *
@@ -264,6 +266,46 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       queryClient.invalidateQueries({ queryKey: ["activity", vars.id] }),
   })
 
+  const setAssignees = useMutation({
+    // Checkbox changes can happen faster than the network. Keep them ordered so
+    // a quick add-then-remove cannot have the earlier insert land last.
+    scope: { id: "content-assignees" },
+    mutationFn: async ({
+      id,
+      previousIds,
+      assigneeIds,
+    }: {
+      id: string
+      previousIds: string[]
+      assigneeIds: string[]
+    }) => {
+      const added = assigneeIds.filter((userId) => !previousIds.includes(userId))
+      const removed = previousIds.filter((userId) => !assigneeIds.includes(userId))
+
+      if (added.length > 0) {
+        const { error } = await supabase
+          .from("content_item_assignees")
+          .insert(added.map((userId) => ({ content_item_id: id, user_id: userId })))
+        if (error) throw error
+      }
+
+      if (removed.length > 0) {
+        const { error } = await supabase
+          .from("content_item_assignees")
+          .delete()
+          .eq("content_item_id", id)
+          .in("user_id", removed)
+        if (error) throw error
+      }
+    },
+    ...optimistic<{ id: string; previousIds: string[]; assigneeIds: string[] }>(
+      (current, vars) =>
+        current.map((item) =>
+          item.id === vars.id ? { ...item, assigneeIds: vars.assigneeIds } : item,
+        ),
+    ),
+  })
+
   const archive = useMutation({
     mutationFn: async ({ id }: { id: string }) => {
       const archivedAt = new Date().toISOString()
@@ -373,6 +415,10 @@ export function ContentProvider({ children }: { children: ReactNode }) {
         })
       },
       updateItem: (id, patch) => update.mutate({ id, patch }),
+      setAssignees: (id, assigneeIds) => {
+        const previousIds = items.find((item) => item.id === id)?.assigneeIds ?? []
+        setAssignees.mutate({ id, previousIds, assigneeIds })
+      },
       archiveItem: (id) => archive.mutate({ id }),
     }
     /*
@@ -390,6 +436,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     move.mutate,
     create.mutate,
     update.mutate,
+    setAssignees.mutate,
     archive.mutate,
     queryClient,
     queryKey,

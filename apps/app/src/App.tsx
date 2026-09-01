@@ -19,6 +19,7 @@ import {
   ReviewTab,
 } from "@/routes/project/tabs"
 import { SignInPage } from "@/routes/sign-in"
+import { TasksPage } from "@/routes/tasks"
 import { TeamPage } from "@/routes/team"
 import { WorkspacePage } from "@/routes/workspace"
 
@@ -90,7 +91,7 @@ export function App() {
           </Route>
           <Route path="/home" element={<HomePage />} />
           <Route path="/calendar" element={<PlaceholderPage title="Calendar" />} />
-          <Route path="/tasks" element={<PlaceholderPage title="My Tasks" />} />
+          <Route path="/tasks" element={<TasksPage />} />
           <Route path="/team" element={<TeamPage />} />
           <Route path="/workspace" element={<WorkspacePage />} />
           <Route path="/settings" element={<PlaceholderPage title="Account" />} />

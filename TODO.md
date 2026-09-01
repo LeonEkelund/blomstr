@@ -7,135 +7,109 @@ Ordered by value, not by effort.
 
 ---
 
-## 1. The review loop — the biggest gap
+## Since the last pass
 
-**Status is stuck on `Draft` and can never change.**
+The review loop is **built**. Migrations 11–16 added the approval RPCs, storage,
+team invites, mindmaps and project activity. `emit_event` is called in 15
+places, so `events` is populated and the activity rail is real. `/home` and
+`/team` are real pages. Archived projects can be restored from `/workspace`.
 
-`content_items` has no `approval_state` column. The rail reads the
-`content_item_status` view, which derives it from the newest `asset_version`:
+Three of the six items that used to be here are done. What's left is below.
 
-```sql
-coalesce(latest.approval_state, 'draft')
-```
+---
 
-No versions exist, so it falls through to `draft` forever. It's wired
-correctly end to end — there is just nothing on the other end yet.
+## 1. Repurposing — the other half of the thesis
 
-The same gap disables the two header buttons in `project-layout.tsx`
-(**Approve**, **Request changes**) and leaves `ReviewTab` an empty state.
+The product line is *"one piece of content in, everything it becomes out, with
+one approval pass."* The approval pass exists now. **Nothing creates the
+"everything it becomes."**
 
-### What's missing
+`RepurposedTab` filters `parentId === project.id` and always finds nothing,
+because there's no way to make a derivative. The "Create a clip" button is
+`disabled`. `content_items.parent_id` and the trigger-maintained
+`ancestor_ids` are built and unused.
 
-| Piece | State |
+### The shape was wrong, though
+
+The first sketch was a `create_derivative_set` RPC that spawns eight empty clip
+slots for the creator to fill in. That's admin the tool invented for itself —
+in reality the clipper cuts what's good and delivers it.
+
+So the feature is smaller: **a clip arriving should be able to say what it came
+from.** A new project with a `parent_id`, created by whoever made the clip. No
+batch RPC, no placeholder rows.
+
+### What the parent link actually buys
+
+| | Pays off |
 |---|---|
-| `assets`, `asset_versions` tables | ✅ exist (migration 05) |
-| `comments` table | ✅ exists (migration 06) |
-| `events` table | ✅ exists (migration 07) |
-| `create_version`, `approve_version`, `request_changes` RPCs | ❌ **never written** |
-| Column revokes on `approval_state` | ❌ never written |
-| Storage bucket for uploads | ❌ none configured |
-| Review tab UI | ❌ empty state |
+| Guest access cascades to derivatives | Today — one grant instead of one per clip |
+| Attribution: "this episode produced 8 clips, 340k views" | Once publishing + metrics exist |
+| The tree — visible proof of what came from what | Once there are derivatives to show |
 
-The RPC SQL is already drafted in [supabase_guide.md](supabase_guide.md) §12 —
-mostly paste and fix.
+Only the first matters right now, which is why this is a small addition rather
+than the big feature it looked like.
 
-### Order
+### Then the bulk review screen
 
-1. `11_rpc` migration — the three functions plus the column revokes
-2. A storage bucket for small assets, with workspace-scoped policies
-3. Review tab: upload → V1 → comment → Approve / Request changes
-4. Wire up the two disabled header buttons
-
-### Start with images, not video
-
-Thumbnails and stills go straight to Supabase Storage — no Drive OAuth, no
-proxy previews, no `service_role`. And thumbnail approval is genuinely
-high-frequency for a creator, so it exercises the whole loop properly. Video
-through Drive is a much bigger lift and can wait until the loop works.
-
-### Why it's first
-
-Everything shipped so far — board, stages, drag-and-drop — is Trello. The
-review loop is the part no other tool does for a creator team, and it is the
-one that turns approval from a Discord thread into a product.
+Eight clips in a grid, approve or reject each in one pass. That's the
+demo-able moment — and it's unbuildable until something creates eight clips.
 
 ---
 
-## 2. Home — the approval inbox
+## 2. Files — where the handoff actually happens
 
-`/home` is a `PlaceholderPage`. It should answer *what needs you right now*.
+`FilesTab` is an empty state and Drive isn't connected, so the most common real
+interaction in a creator team — *here's the footage / here's the delivery* —
+happens entirely outside the product.
 
-It splits into halves that are blocked differently:
+Storage exists (migration 13) for small assets. What's missing is Google Drive
+for anything large.
 
-| Section | Source | Blocked? |
-|---|---|---|
-| **Needs your approval** | versions in `in_review` | **Yes** — §1; no versions exist |
-| **Recent activity** | `events` | **Yes** — see below |
-| **Your deadlines** | `due_at` on `content_items` | No — buildable today |
-| **Assigned to you** | `content_item_assignees` | No — buildable today |
+**Long lead time:** Drive OAuth needs Google verification. Worth starting the
+application before the code is ready.
 
-`emit_event()` is defined in migration 07 but **nothing calls it** — the only
-insert into `events` is inside the function body itself. So the table is
-permanently empty until the §1 RPCs land and start emitting.
-
-The deadlines-and-assignments half is real work that survives, so a first pass
-is possible now. But the approval queue is the half that makes this the
-daily-habit screen rather than a summary you check occasionally — and that half
-needs §1 first.
+**The trap, carried from the README:** Drive ACLs are not your ACLs. A guest
+sees a file listed and gets "Request access" on click. Generate previews
+server-side with the owner's token so viewing never depends on Drive sharing.
 
 ---
 
-## 3. Board card menu
+## 3. Mobile approvals
 
-The project page now has inline editing and archive. The board card doesn't —
-no `⋯`, so renaming or archiving means opening the project first.
+Review works, but only on a laptop. The creator is the bottleneck and isn't at
+a desk — notification, swipe through what's waiting, approve, from a car.
 
-Reuses `updateItem` and `archiveItem` from `use-content.tsx`, so it's UI only.
+Smaller than Files, and it multiplies work already shipped rather than opening
+a new front. The board can stay desktop-only; approvals shouldn't be.
 
-**One gotcha:** the card has a full-size `<Link>` overlay for navigation. The
-`⋯` button needs to sit above it in z-order and `stopPropagation`, or clicking
-the menu navigates to the project instead.
+---
 
-Scope: Rename, Archive. Board is for triage — full editing stays on the
+## 4. Board card menu
+
+The project page has inline editing and archive. The board card doesn't — no
+`⋯`, so renaming or archiving means opening the project first.
+
+Reuses `updateItem` and `archiveItem`, so it's UI only.
+
+**Gotcha:** the card has a full-size `<Link>` overlay. The `⋯` needs to sit
+above it in z-order and `stopPropagation`, or clicking the menu navigates.
+
+Scope: Rename, Archive. The board is for triage — full editing stays on the
 project page.
 
 ---
 
-## 4. Assignees
-
-The rail shows assignees read-only. Making them editable needs a mutation
-against `content_item_assignees` (a join table, not a column), so it's a
-different shape from the other rail fields — hence not done alongside them.
-
-Policies already exist. `useMembers()` already lists the workspace roster.
-
----
-
-## 5. Unarchive
-
-`archiveItem` sets `archived_at`, and every query filters `archived_at is
-null`. There is currently **no way to see or restore an archived project** —
-it's recoverable in principle, unreachable in practice.
-
-Needs: an archived view (Settings, or a board filter) with a restore action.
-Small, but right now "archive" is functionally delete from the user's side.
-
----
-
-## 6. Still placeholders
-
-Each is a `PlaceholderPage` or an `EmptyState`:
+## 5. Still placeholders
 
 | Screen | Note |
 |---|---|
-| `/calendar` | Publish dates and deadlines across the workspace |
-| `/tasks` | Needs a tasks table — no schema yet |
-| `/team` | Roster exists via `useMembers`; invites need `invite_member` RPC |
-| `/settings` | Workspace name, stage editing, theme |
-| `/integrations` | Drive and social OAuth — the long-lead-time work |
-| Overview tab | Wants the event log (§1) to have anything to summarise |
-| Notes tab | Plain text on the project; no schema yet |
-| Files tab | Drive integration |
+| `/calendar` | The same items grouped by `publish_at` — cheap whenever wanted |
+| `/settings` (Account) | Personal settings — workspace-level moved to `/workspace` |
+| `/integrations` | Drive and social OAuth — see §2 |
+| Overview tab | Events exist now, so this is buildable |
+| Files tab | §2 |
+| Repurposed tab | §1 |
 | Publish tab | Needs the `jobs` queue wired to Edge Functions |
 
 ---
@@ -145,15 +119,18 @@ Each is a `PlaceholderPage` or an `EmptyState`:
 - **`ancestor_ids` drift is a permission leak**, not a data bug. Triggers
   maintain it; `check_ancestor_integrity()` should run in tests.
 - **No RLS coverage test.** The query in supabase_guide.md §11 asserts every
-  table has RLS on with at least one policy. It should be automated — it's the
+  table has RLS on with at least one policy. Should be automated — it's the
   check that catches the table added at 1am.
-- **`can_read_item` has no tests.** It's the one function where a bug is a data
+- **`can_read_item` has no tests.** The one function where a bug is a data
   breach rather than a broken screen. Seven cases listed in the guide, §10.
 - **No app-side test runner.** `rank.ts` is pure, breakable, and untested.
+- **No error boundary.** A component that throws blanks the entire app rather
+  than one panel — which is how a small bug in the notes editor once took down
+  every screen.
 - **Developing against the hosted database.** Docker isn't installed, so
   there's no local Postgres and no `db reset`. Every schema change is a forward
   migration against live data. Fine while you're the only user; install Docker
   before anyone else's data is in there.
 - **Social API approval is the longest lead time** in the whole project.
-  TikTok and Meta review takes weeks. Worth starting those applications well
-  before the publishing code is ready.
+  TikTok and Meta review takes weeks. Start those applications well before the
+  publishing code is ready.
