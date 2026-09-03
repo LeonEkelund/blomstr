@@ -5,6 +5,7 @@ import { Navigate, useLocation } from "react-router-dom"
 import { useAuth } from "@/components/auth-provider"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { OAUTH_RETURN_TO_KEY, safeInternalPath } from "@/lib/auth"
 import { supabase } from "@/lib/supabase"
 
 /** Google's mark. Lucide has no brand icons, and an approximation looks off. */
@@ -82,9 +83,19 @@ export function SignInPage() {
   async function handleGoogle() {
     setError(null)
     setBusy(true)
+
+    // The router state does not survive leaving the site for Google's consent
+    // screen. Keep the intended in-app destination for the callback instead.
+    try {
+      const from = (location.state as { from?: string } | null)?.from
+      sessionStorage.setItem(OAUTH_RETURN_TO_KEY, safeInternalPath(from))
+    } catch {
+      // Storage can be unavailable in private browsing; landing on Home is fine.
+    }
+
     const { error: authError } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     })
     if (authError) {
       setError(authError.message)

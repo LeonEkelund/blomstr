@@ -7,6 +7,7 @@ import { BoardPage } from "@/routes/board"
 import { CalendarPage } from "@/routes/calendar"
 import { HomePage } from "@/routes/home"
 import { InvitePage } from "@/routes/invite"
+import { OAuthCallbackPage } from "@/routes/oauth-callback"
 import { OnboardingPage } from "@/routes/onboarding"
 import { PlaceholderPage } from "@/routes/placeholder"
 import { ProjectLayout } from "@/routes/project/project-layout"
@@ -71,6 +72,7 @@ export function App() {
   return (
     <Routes>
       <Route path="/sign-in" element={<SignInPage />} />
+      <Route path="/auth/callback" element={<OAuthCallbackPage />} />
 
       <Route element={<RequireAuth />}>
         <Route path="/onboarding" element={<OnboardingPage />} />
