@@ -4,6 +4,7 @@ import { AppSidebar } from "@/components/layout/app-sidebar"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { useWorkspace } from "@/hooks/use-workspace"
 import { BoardPage } from "@/routes/board"
+import { CalendarPage } from "@/routes/calendar"
 import { HomePage } from "@/routes/home"
 import { InvitePage } from "@/routes/invite"
 import { OnboardingPage } from "@/routes/onboarding"
@@ -90,7 +91,7 @@ export function App() {
             <Route path="publish" element={<PublishTab />} />
           </Route>
           <Route path="/home" element={<HomePage />} />
-          <Route path="/calendar" element={<PlaceholderPage title="Calendar" />} />
+          <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/tasks" element={<TasksPage />} />
           <Route path="/team" element={<TeamPage />} />
           <Route path="/workspace" element={<WorkspacePage />} />
