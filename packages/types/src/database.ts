@@ -98,8 +98,11 @@ export type Database = {
           content_item_id: string
           created_at: string
           draft_body: string | null
+          drive_file_id: string | null
           id: string
           kind: string
+          mime_type: string | null
+          size_bytes: number | null
           title: string
           updated_at: string
           workspace_id: string
@@ -108,8 +111,11 @@ export type Database = {
           content_item_id: string
           created_at?: string
           draft_body?: string | null
+          drive_file_id?: string | null
           id?: string
           kind: string
+          mime_type?: string | null
+          size_bytes?: number | null
           title: string
           updated_at?: string
           workspace_id: string
@@ -118,8 +124,11 @@ export type Database = {
           content_item_id?: string
           created_at?: string
           draft_body?: string | null
+          drive_file_id?: string | null
           id?: string
           kind?: string
+          mime_type?: string | null
+          size_bytes?: number | null
           title?: string
           updated_at?: string
           workspace_id?: string
@@ -141,6 +150,76 @@ export type Database = {
           },
           {
             foreignKeyName: "assets_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      drive_connections: {
+        Row: {
+          connected_by: string
+          created_at: string
+          google_email: string
+          id: string
+          refresh_token_secret_id: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          connected_by: string
+          created_at?: string
+          google_email: string
+          id?: string
+          refresh_token_secret_id: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          connected_by?: string
+          created_at?: string
+          google_email?: string
+          id?: string
+          refresh_token_secret_id?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drive_connections_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      drive_oauth_states: {
+        Row: {
+          created_at: string
+          expires_at: string
+          state_hash: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          state_hash: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          state_hash?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drive_oauth_states_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -798,6 +877,10 @@ export type Database = {
         }
       }
       create_workspace: { Args: { name: string }; Returns: string }
+      disconnect_drive: {
+        Args: { p_workspace_id: string }
+        Returns: undefined
+      }
       emit_event: {
         Args: {
           payload?: Json
@@ -815,8 +898,40 @@ export type Database = {
         }
         Returns: boolean
       }
+      get_drive_refresh_token: {
+        Args: { p_workspace_id: string }
+        Returns: string
+      }
       in_workspace: { Args: { ws: string }; Returns: boolean }
       is_staff: { Args: { ws: string }; Returns: boolean }
+      link_drive_file: {
+        Args: {
+          p_content_item_id: string
+          p_drive_file_id: string
+          p_mime_type?: string | null
+          p_size_bytes?: number | null
+          p_title: string
+        }
+        Returns: {
+          content_item_id: string
+          created_at: string
+          draft_body: string | null
+          drive_file_id: string | null
+          id: string
+          kind: string
+          mime_type: string | null
+          size_bytes: number | null
+          title: string
+          updated_at: string
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "assets"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       lease_jobs: {
         Args: { batch?: number; kinds: string[]; lease_seconds?: number }
         Returns: {
@@ -875,6 +990,29 @@ export type Database = {
           p_workspace_id: string
         }
         Returns: undefined
+      }
+      upsert_drive_connection_secret: {
+        Args: {
+          p_connected_by: string
+          p_google_email: string
+          p_refresh_token: string
+          p_workspace_id: string
+        }
+        Returns: {
+          connected_by: string
+          created_at: string
+          google_email: string
+          id: string
+          refresh_token_secret_id: string
+          updated_at: string
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "drive_connections"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
     }
     Enums: {

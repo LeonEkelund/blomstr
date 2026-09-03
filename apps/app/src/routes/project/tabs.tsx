@@ -1,7 +1,8 @@
 import type { ContentItem } from "@blomstr/types"
-import { ArrowRight, CalendarClock, FolderOpen, Scissors } from "lucide-react"
+import { ArrowRight, CalendarClock, Scissors } from "lucide-react"
 import { lazy, Suspense } from "react"
 import { Link, useOutletContext } from "react-router-dom"
+import { DriveFilesPanel } from "@/components/drive-files-panel"
 import { EmptyState } from "@/components/empty-state"
 import { ReviewPanel } from "@/components/review-panel"
 import { Button } from "@/components/ui/button"
@@ -117,18 +118,7 @@ export function NotesTab() {
 }
 
 export function FilesTab() {
-  return (
-    <EmptyState
-      icon={FolderOpen}
-      title="No files linked"
-      description="Footage stays in Google Drive and is referenced here, so nothing large routes through blomstr. Thumbnails and small assets are stored directly."
-      action={
-        <Button variant="outline" size="sm" disabled>
-          Connect a Drive folder
-        </Button>
-      }
-    />
-  )
+  return <DriveFilesPanel project={useProject()} />
 }
 
 export function RepurposedTab() {

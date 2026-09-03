@@ -382,6 +382,17 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
+# These functions verify the Supabase user token themselves. The Google
+# callback has no user JWT; its short-lived, single-use state is the guard.
+[functions.drive-auth-start]
+verify_jwt = false
+
+[functions.drive-auth-callback]
+verify_jwt = false
+
+[functions.drive-access-token]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 

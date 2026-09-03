@@ -6,6 +6,7 @@ import { useWorkspace } from "@/hooks/use-workspace"
 import { BoardPage } from "@/routes/board"
 import { CalendarPage } from "@/routes/calendar"
 import { HomePage } from "@/routes/home"
+import { IntegrationsPage } from "@/routes/integrations"
 import { InvitePage } from "@/routes/invite"
 import { OAuthCallbackPage } from "@/routes/oauth-callback"
 import { OnboardingPage } from "@/routes/onboarding"
@@ -98,10 +99,7 @@ export function App() {
           <Route path="/team" element={<TeamPage />} />
           <Route path="/workspace" element={<WorkspacePage />} />
           <Route path="/settings" element={<PlaceholderPage title="Account" />} />
-          <Route
-            path="/integrations"
-            element={<PlaceholderPage title="Integrations" />}
-          />
+          <Route path="/integrations" element={<IntegrationsPage />} />
           <Route path="*" element={<PlaceholderPage title="Not found" />} />
         </Route>
       </Route>
