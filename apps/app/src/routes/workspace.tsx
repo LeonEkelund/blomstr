@@ -111,7 +111,7 @@ export function WorkspacePage() {
     <>
       <PageHeader title="Workspace" />
 
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         <div className="mx-auto max-w-2xl">
           <section>
             <h2 className="text-sm font-medium">General</h2>
@@ -120,7 +120,7 @@ export function WorkspacePage() {
             </p>
 
             <form
-              className="mt-4 flex items-end gap-2 rounded-lg border bg-card p-4"
+              className="mt-4 flex flex-col gap-3 rounded-lg border bg-card p-4 sm:flex-row sm:items-end sm:gap-2"
               onSubmit={submitName}
             >
               <div className="min-w-0 flex-1">
@@ -134,7 +134,12 @@ export function WorkspacePage() {
                   onChange={(event) => setName(event.target.value)}
                 />
               </div>
-              <Button type="submit" size="sm" disabled={!canSave}>
+              <Button
+                type="submit"
+                size="sm"
+                className="w-full sm:w-auto"
+                disabled={!canSave}
+              >
                 {rename.isPending && <Loader2 className="size-3.5 animate-spin" />}
                 Save
               </Button>

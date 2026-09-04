@@ -31,7 +31,7 @@ export function IntegrationsPage() {
     <>
       <PageHeader title="Integrations" />
 
-      <main className="flex-1 overflow-y-auto p-6">
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6">
         <div className="mx-auto max-w-2xl">
           <div>
             <h2 className="text-lg font-semibold tracking-tight">Connected apps</h2>

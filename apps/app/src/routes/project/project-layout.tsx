@@ -36,6 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { useProjectActivity } from "@/hooks/use-activity"
 import { useContent } from "@/hooks/use-content"
@@ -528,16 +529,23 @@ function Rail({
   item,
   mode,
   onModeChange,
+  mobile = false,
 }: {
   item: ContentItem
   mode: RailMode
   onModeChange: (mode: RailMode) => void
+  mobile?: boolean
 }) {
   const { members } = useMembers()
   const assignees = members.filter((m) => item.assigneeIds.includes(m.id))
 
   return (
-    <aside className="hidden min-h-0 w-80 shrink-0 flex-col border-l lg:flex">
+    <aside
+      className={cn(
+        "min-h-0 shrink-0 flex-col",
+        mobile ? "flex min-h-0 w-full flex-1" : "hidden w-80 border-l lg:flex",
+      )}
+    >
       <nav className="grid shrink-0 grid-cols-3 border-b p-2" aria-label="Project panel">
         {railModes.map((railMode) => (
           <button
@@ -611,6 +619,7 @@ export function ProjectLayout() {
   const { projectId } = useParams()
   const { items } = useContent()
   const [railOpen, setRailOpen] = useState(true)
+  const [mobileRailOpen, setMobileRailOpen] = useState(false)
   const [railMode, setRailMode] = useState<RailMode>(initialRailMode)
 
   const item = items.find((i) => i.id === projectId)
@@ -648,12 +657,12 @@ export function ProjectLayout() {
   return (
     <>
       {/* h-14 to line the rule up with the board's header and the sidebar's. */}
-      <header className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
+      <header className="flex h-14 shrink-0 items-center gap-2 border-b px-3 sm:gap-3 sm:px-4">
         <SidebarTrigger className="dark:hover:bg-muted" />
         <div className="h-4 w-px shrink-0 bg-border" />
 
         {/* Breadcrumb doubles as back navigation, so no separate back button. */}
-        <nav className="flex min-w-0 items-center gap-1.5 text-sm">
+        <nav className="flex min-w-0 flex-1 items-center gap-1.5 text-sm">
           <Link
             to="/projects"
             className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
@@ -667,11 +676,16 @@ export function ProjectLayout() {
         </nav>
 
         {item.type && (
-          <Badge variant="secondary" className="shrink-0 font-normal">
+          <Badge
+            variant="secondary"
+            className="hidden shrink-0 font-normal md:inline-flex"
+          >
             {typeLabels[item.type]}
           </Badge>
         )}
-        <StagePicker item={item} />
+        <div className="hidden sm:block">
+          <StagePicker item={item} />
+        </div>
 
         {/*
           Approving lives in the Review tab, next to the version being
@@ -680,6 +694,15 @@ export function ProjectLayout() {
         */}
         <div className="ml-auto flex shrink-0 items-center gap-2">
           <ProjectMenu item={item} />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8 lg:hidden"
+            onClick={() => setMobileRailOpen(true)}
+            aria-label="Open project details"
+          >
+            <PanelRightOpen className="size-4" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -722,6 +745,15 @@ export function ProjectLayout() {
         </div>
         {railOpen && <Rail item={item} mode={railMode} onModeChange={changeRailMode} />}
       </div>
+
+      <Sheet open={mobileRailOpen} onOpenChange={setMobileRailOpen}>
+        <SheetContent side="right" className="w-[min(100%,24rem)] gap-0 p-0 lg:hidden">
+          <div className="flex h-12 shrink-0 items-center border-b px-4 pr-12">
+            <SheetTitle>Project panel</SheetTitle>
+          </div>
+          <Rail item={item} mode={railMode} onModeChange={changeRailMode} mobile />
+        </SheetContent>
+      </Sheet>
     </>
   )
 }

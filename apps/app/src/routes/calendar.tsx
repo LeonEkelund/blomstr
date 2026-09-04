@@ -118,6 +118,10 @@ export function CalendarPage() {
   }, [visibleMonth])
 
   const eventsByDay = useMemo(() => buildEvents(items), [items])
+  const monthDaysWithEvents = days
+    .filter((day) => isSameMonth(day, visibleMonth))
+    .map((day) => ({ day, events: eventsByDay.get(dateKey(day)) ?? [] }))
+    .filter(({ events }) => events.length > 0)
   const scheduledCount = items.filter((item) => item.dueAt || item.publishAt).length
 
   return (
@@ -165,7 +169,7 @@ export function CalendarPage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto pb-2">
+          <div className="hidden overflow-x-auto pb-2 md:block">
             <div className="min-w-3xl overflow-hidden rounded-xl border bg-card">
               <div className="grid grid-cols-7 border-b bg-muted/40">
                 {weekdays.map((weekday) => (
@@ -232,6 +236,29 @@ export function CalendarPage() {
                 </div>
               )}
             </div>
+          </div>
+
+          <div className="space-y-4 md:hidden">
+            {loading ? (
+              [0, 1, 2].map((key) => <Skeleton key={key} className="h-24 w-full" />)
+            ) : monthDaysWithEvents.length === 0 ? (
+              <div className="rounded-xl border border-dashed px-5 py-10 text-center text-sm text-muted-foreground">
+                Nothing scheduled this month.
+              </div>
+            ) : (
+              monthDaysWithEvents.map(({ day, events }) => (
+                <section key={dateKey(day)}>
+                  <h3 className="mb-2 text-xs font-medium text-muted-foreground">
+                    {format(day, "EEEE, MMMM d")}
+                  </h3>
+                  <div className="space-y-1.5">
+                    {events.map((event) => (
+                      <EventLink key={event.id} event={event} />
+                    ))}
+                  </div>
+                </section>
+              ))
+            )}
           </div>
 
           {!loading && scheduledCount === 0 && (

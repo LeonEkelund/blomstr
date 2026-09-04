@@ -39,7 +39,7 @@ function InviteLink({ token, onDone }: { token: string; onDone: () => void }) {
       <p className="mt-1 text-xs text-muted-foreground">
         Shown once. Copy it now — it cannot be retrieved later.
       </p>
-      <div className="mt-2 flex items-center gap-2">
+      <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
         <Input readOnly value={url} className="h-8 font-mono text-xs" />
         <Button
           variant="outline"
@@ -71,7 +71,7 @@ function InviteForm() {
 
   return (
     <div className="mt-4 rounded-lg border bg-card p-3">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
@@ -110,7 +110,7 @@ function InviteForm() {
           placeholder="Lock to an email (optional)"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="h-8 w-56"
+          className="h-8 w-full sm:w-56"
         />
 
         <Button
@@ -156,7 +156,7 @@ export function TeamPage() {
         </span>
       </PageHeader>
 
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         <div className="mx-auto max-w-2xl">
           <section>
             <h2 className="text-sm font-medium">People</h2>
@@ -185,7 +185,7 @@ export function TeamPage() {
                       someone go and look it up. This is the whole reason the
                       page exists beyond listing names.
                     */}
-                    <p className="truncate text-xs text-muted-foreground">
+                    <p className="line-clamp-2 text-xs text-muted-foreground sm:truncate">
                       {roleDescriptions[m.role]}
                     </p>
                   </div>

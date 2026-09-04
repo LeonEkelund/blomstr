@@ -65,7 +65,7 @@ export function OverviewTab() {
   }[project.approvalState]
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-6 py-16">
+    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-4 py-10 sm:px-6 sm:py-16">
       <p className="text-xs font-medium text-muted-foreground">Current status</p>
       <h2 className="mt-2 text-xl font-semibold tracking-tight">
         {approvalLabels[project.approvalState]}
@@ -143,7 +143,7 @@ export function RepurposedTab() {
   }
 
   return (
-    <div className="flex flex-col gap-2 p-6">
+    <div className="flex flex-col gap-2 p-4 sm:p-6">
       {children.map((child) => (
         <article key={child.id} className="rounded-lg border bg-card p-3">
           <h3 className="text-sm font-medium">{child.title}</h3>

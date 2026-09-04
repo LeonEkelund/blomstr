@@ -72,13 +72,16 @@ function GhostCard({
  */
 export function BoardSkeleton({ columns }: { columns: BoardColumn[] }) {
   return (
-    <div className="flex-1 overflow-x-auto p-6">
-      <div className="flex h-full gap-4">
+    <div className="flex-1 snap-x snap-mandatory scroll-px-4 overflow-x-auto sm:snap-none sm:p-6">
+      <div className="flex h-full gap-3 pl-4 sm:gap-4 sm:pl-0">
         {GHOST_COLUMNS.map((ghost, index) => {
           const stage = columns[index]?.stage
 
           return (
-            <section key={ghost.key} className="flex w-72 shrink-0 flex-col">
+            <section
+              key={ghost.key}
+              className="flex w-[calc(100vw-2rem)] shrink-0 snap-center flex-col sm:w-72 sm:snap-start"
+            >
               {/*
                 Same classes as the real column header, and the ghosted variant
                 sits in the same 20px line box — otherwise the cards below shift
@@ -113,6 +116,7 @@ export function BoardSkeleton({ columns }: { columns: BoardColumn[] }) {
             </section>
           )
         })}
+        <div aria-hidden className="w-1 shrink-0 sm:hidden" />
       </div>
     </div>
   )

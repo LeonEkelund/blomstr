@@ -365,7 +365,7 @@ function Column({
   }, [column.stage.id])
 
   return (
-    <section className="flex w-72 shrink-0 flex-col">
+    <section className="flex w-[calc(100vw-2rem)] shrink-0 snap-center flex-col sm:w-72 sm:snap-start">
       <header className="flex items-center gap-2 px-1 pb-3">
         <h2 className="text-sm font-medium">{column.stage.name}</h2>
         <span className="text-xs text-muted-foreground">{column.items.length}</span>
@@ -546,8 +546,11 @@ export function BoardPage() {
         <span className="text-xs text-muted-foreground">{projectCount} projects</span>
       </PageHeader>
 
-      <div ref={scrollRef} className="flex-1 overflow-x-auto p-6">
-        <div className="flex h-full gap-4">
+      <div
+        ref={scrollRef}
+        className="flex-1 snap-x snap-mandatory scroll-px-4 overflow-x-auto sm:snap-none sm:p-6"
+      >
+        <div className="flex h-full gap-3 pl-4 sm:gap-4 sm:pl-0">
           {columns.map((column) => (
             <Column
               key={column.stage.id}
@@ -559,6 +562,7 @@ export function BoardPage() {
               showFirstProject={boardIsEmpty && column.stage.id === firstStageId}
             />
           ))}
+          <div aria-hidden className="w-1 shrink-0 sm:hidden" />
         </div>
       </div>
     </>

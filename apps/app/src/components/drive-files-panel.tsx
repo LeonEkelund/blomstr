@@ -267,7 +267,7 @@ export function DriveFilesPanel({ project }: { project: ContentItem }) {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-6">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-6">
       <div className="mx-auto max-w-3xl">
         <div className="mb-4 flex items-center gap-3">
           <div>
@@ -306,7 +306,10 @@ export function DriveFilesPanel({ project }: { project: ContentItem }) {
 
         <ul className="divide-y overflow-hidden rounded-xl border bg-card">
           {files.map((file) => (
-            <li key={file.id} className="flex items-center gap-3 p-3">
+            <li
+              key={file.id}
+              className="flex flex-wrap items-center gap-2 p-3 sm:flex-nowrap sm:gap-3"
+            >
               <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
                 <File className="size-4 text-muted-foreground" strokeWidth={1.5} />
               </div>
@@ -320,6 +323,7 @@ export function DriveFilesPanel({ project }: { project: ContentItem }) {
               <Button
                 variant="ghost"
                 size="sm"
+                className="ml-12 sm:ml-0"
                 render={
                   <a
                     href={`https://drive.google.com/open?id=${encodeURIComponent(file.driveFileId)}`}

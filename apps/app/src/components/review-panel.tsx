@@ -60,7 +60,7 @@ function VersionThread({
       // Remounts per version, so the draft and scroll position do not follow
       // you from one version's conversation into another's.
       key={version.id}
-      className="hidden w-80 shrink-0 border-l xl:flex"
+      className="min-h-72 shrink-0 border-t xl:min-h-0 xl:w-80 xl:border-t-0 xl:border-l"
       comments={comments}
       pending={comment.isPending}
       placeholder={`Comment on V${version.number}`}
@@ -139,7 +139,7 @@ export function ReviewPanel({ project }: { project: ContentItem }) {
         </div>
       ) : (
         <>
-          <header className="flex shrink-0 items-center gap-2 border-b px-6 py-3">
+          <header className="flex shrink-0 flex-wrap items-center gap-2 border-b px-3 py-3 sm:px-6">
             {/*
               The version picker lives here rather than in a strip along the
               bottom: a tall image pushed that strip off screen, so switching
@@ -190,7 +190,7 @@ export function ReviewPanel({ project }: { project: ContentItem }) {
               </span>
             )}
 
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex flex-wrap items-center justify-end gap-2 max-sm:w-full">
               {/*
                 Available to anyone who can see the version, guests included —
                 a sponsor reviewing an ad read wants the file, not a screenshot
@@ -211,7 +211,7 @@ export function ReviewPanel({ project }: { project: ContentItem }) {
                   }
                 >
                   <Download className="size-3.5" strokeWidth={1.5} />
-                  Download
+                  <span className="hidden sm:inline">Download</span>
                 </Button>
               )}
 
@@ -227,7 +227,7 @@ export function ReviewPanel({ project }: { project: ContentItem }) {
                 ) : (
                   <Upload className="size-3.5" strokeWidth={1.5} />
                 )}
-                New version
+                <span className="hidden sm:inline">New version</span>
               </Button>
 
               {canApprove && awaitingReview && current && (
@@ -239,7 +239,7 @@ export function ReviewPanel({ project }: { project: ContentItem }) {
                     onClick={() => setNote("")}
                   >
                     <MessageSquareReply className="size-3.5" strokeWidth={1.5} />
-                    Request changes
+                    <span className="hidden sm:inline">Request changes</span>
                   </Button>
                   <Button
                     size="sm"
@@ -252,7 +252,7 @@ export function ReviewPanel({ project }: { project: ContentItem }) {
                     ) : (
                       <Check className="size-3.5" strokeWidth={1.5} />
                     )}
-                    Approve
+                    <span className="hidden sm:inline">Approve</span>
                   </Button>
                 </>
               )}
@@ -265,7 +265,7 @@ export function ReviewPanel({ project }: { project: ContentItem }) {
             this replaces.
           */}
           {note !== null && current && (
-            <div className="shrink-0 border-b px-6 py-3">
+            <div className="shrink-0 border-b px-3 py-3 sm:px-6">
               <textarea
                 // biome-ignore lint/a11y/noAutofocus: opened by an explicit user action
                 autoFocus
@@ -301,8 +301,8 @@ export function ReviewPanel({ project }: { project: ContentItem }) {
             </div>
           )}
 
-          <div className="flex min-h-0 flex-1">
-            <div className="min-h-0 flex-1 overflow-auto p-6">
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto xl:flex-row xl:overflow-hidden">
+            <div className="min-h-72 flex-1 overflow-auto p-3 sm:p-6">
               {current?.url ? (
                 <img
                   src={current.url}
