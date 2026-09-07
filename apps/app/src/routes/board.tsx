@@ -11,15 +11,32 @@ import {
   extractClosestEdge,
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge"
 import type { ContentItem, Member } from "@blomstr/types"
-import { Plus } from "lucide-react"
+import { Archive, MoreHorizontal, Pencil, Plus } from "lucide-react"
 import { memo, useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { PageHeader } from "@/components/layout/page-header"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { type BoardColumn, useBoard } from "@/hooks/use-board"
 import { useContent } from "@/hooks/use-content"
-import { useMembers } from "@/hooks/use-members"
+import { useCurrentMember, useMembers } from "@/hooks/use-members"
 import { formatDate, initials, publishLabel, typeLabels } from "@/lib/content"
 import { cn } from "@/lib/utils"
 import { BoardSkeleton } from "@/routes/board-skeleton"
@@ -53,17 +70,130 @@ function isColumnData(data: Record<string | symbol, unknown>): data is ColumnDat
 const Card = memo(function Card({
   item,
   members,
+  descendants,
+  canManage,
+  onRename,
+  onArchive,
 }: {
   item: ContentItem
   members: Member[]
+  descendants: number
+  canManage: boolean
+  onRename: (title: string) => void
+  onArchive: () => void
 }) {
   const assignees = members.filter((m) => item.assigneeIds.includes(m.id))
   const date = item.publishAt ?? item.dueAt
   const dateLabel = publishLabel(item.publishAt)
+  const [renaming, setRenaming] = useState(false)
+  const [draft, setDraft] = useState(item.title)
+  const [confirmingArchive, setConfirmingArchive] = useState(false)
+
+  function commitRename() {
+    const nextTitle = draft.trim()
+    if (nextTitle && nextTitle !== item.title) onRename(nextTitle)
+    else setDraft(item.title)
+    setRenaming(false)
+  }
 
   return (
-    <article className="rounded-lg border bg-card p-3 transition-colors hover:border-foreground/20">
-      <h3 className="text-sm leading-snug font-medium">{item.title}</h3>
+    <article className="relative rounded-lg border bg-card p-3 transition-colors group-hover/card:border-foreground/20">
+      {renaming ? (
+        <input
+          // biome-ignore lint/a11y/noAutofocus: opened by an explicit rename action
+          autoFocus
+          value={draft}
+          maxLength={160}
+          aria-label="Project title"
+          className="relative z-20 w-full rounded-sm bg-transparent pr-7 text-sm leading-snug font-medium outline-none ring-1 ring-ring"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => event.stopPropagation()}
+          onBlur={commitRename}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            event.stopPropagation()
+            if (event.key === "Enter") commitRename()
+            if (event.key === "Escape") {
+              setDraft(item.title)
+              setRenaming(false)
+            }
+          }}
+        />
+      ) : (
+        <h3 className={cn("text-sm leading-snug font-medium", canManage && "pr-7")}>
+          {item.title}
+        </h3>
+      )}
+
+      {canManage && !renaming && (
+        <>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  className="absolute top-2 right-2 z-20 opacity-100 sm:opacity-0 sm:group-focus-within/card:opacity-100 sm:group-hover/card:opacity-100 data-popup-open:opacity-100"
+                  aria-label={`Actions for ${item.title}`}
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={(event) => event.stopPropagation()}
+                  onKeyDown={(event) => event.stopPropagation()}
+                >
+                  <MoreHorizontal />
+                </Button>
+              }
+            />
+            <DropdownMenuContent
+              align="end"
+              className="w-40"
+              onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => event.stopPropagation()}
+            >
+              <DropdownMenuItem
+                onClick={(event) => {
+                  event.stopPropagation()
+                  setDraft(item.title)
+                  setRenaming(true)
+                }}
+              >
+                <Pencil />
+                Rename
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  setConfirmingArchive(true)
+                }}
+              >
+                <Archive />
+                Archive
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <AlertDialog open={confirmingArchive} onOpenChange={setConfirmingArchive}>
+            <AlertDialogContent
+              onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => event.stopPropagation()}
+            >
+              <AlertDialogHeader>
+                <AlertDialogTitle>Archive “{item.title}”?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {descendants > 0
+                    ? `This also archives ${descendants} derived ${descendants === 1 ? "item" : "items"}. `
+                    : ""}
+                  It disappears from the board. Nothing is deleted.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={onArchive}>Archive</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
+      )}
 
       <div className="mt-2 flex items-center gap-1.5 empty:mt-0">
         {item.type && (
@@ -158,7 +288,21 @@ function DropLine({ edge, active }: { edge: Edge; active: boolean }) {
   )
 }
 
-function DraggableCard({ item, members }: { item: ContentItem; members: Member[] }) {
+function DraggableCard({
+  item,
+  members,
+  descendants,
+  canManage,
+  onRename,
+  onArchive,
+}: {
+  item: ContentItem
+  members: Member[]
+  descendants: number
+  canManage: boolean
+  onRename: (title: string) => void
+  onArchive: () => void
+}) {
   /*
     Two elements, deliberately.
 
@@ -222,29 +366,33 @@ function DraggableCard({ item, members }: { item: ContentItem; members: Member[]
       <DropLine edge="top" active={edge === "top"} />
       <DropLine edge="bottom" active={edge === "bottom"} />
       {/*
-        The card is its own drag handle and its own link.
-
-        A real <a> would let the browser start a native link drag instead of
-        ours, so this is a div with an explicit role. Enter opens the project;
-        the drag is pointer-driven and does not claim any key.
+        A transparent button makes the whole visual card clickable without
+        nesting the menu and rename input inside a button. Those controls sit
+        above it at z-20; the button gives keyboard users the same open action.
       */}
-      {/* biome-ignore lint/a11y/useSemanticElements: a button may only contain phrasing content, and the card is an article with a heading */}
       <div
         ref={cardRef}
-        role="button"
-        tabIndex={0}
-        onClick={() => navigate(`/projects/${item.id}`)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") navigate(`/projects/${item.id}`)
-        }}
         className={cn(
-          "cursor-grab rounded-lg outline-offset-2 transition-opacity focus-visible:outline-2 focus-visible:outline-ring active:cursor-grabbing",
+          "group/card relative cursor-grab rounded-lg transition-opacity active:cursor-grabbing",
           // Faded, not hidden: the browser drags a picture of the card, and
           // the original staying in place is what keeps the column steady.
           dragging && "opacity-40",
         )}
       >
-        <Card item={item} members={members} />
+        <Card
+          item={item}
+          members={members}
+          descendants={descendants}
+          canManage={canManage}
+          onRename={onRename}
+          onArchive={onArchive}
+        />
+        <button
+          type="button"
+          aria-label={`Open ${item.title}`}
+          onClick={() => navigate(`/projects/${item.id}`)}
+          className="absolute inset-0 z-10 cursor-grab rounded-lg outline-offset-2 focus-visible:outline-2 focus-visible:outline-ring active:cursor-grabbing"
+        />
       </div>
     </div>
   )
@@ -316,6 +464,10 @@ function FirstProjectCard({ onClick }: { onClick: () => void }) {
 function Column({
   column,
   members,
+  descendantCounts,
+  canManage,
+  onRename,
+  onArchive,
   composing,
   onCompose,
   onCloseCompose,
@@ -323,6 +475,10 @@ function Column({
 }: {
   column: BoardColumn
   members: Member[]
+  descendantCounts: Map<string, number>
+  canManage: boolean
+  onRename: (id: string, title: string) => void
+  onArchive: (id: string) => void
   composing: boolean
   onCompose: () => void
   onCloseCompose: () => void
@@ -394,7 +550,15 @@ function Column({
         )}
       >
         {column.items.map((item) => (
-          <DraggableCard key={item.id} item={item} members={members} />
+          <DraggableCard
+            key={item.id}
+            item={item}
+            members={members}
+            descendants={descendantCounts.get(item.id) ?? 0}
+            canManage={canManage}
+            onRename={(title) => onRename(item.id, title)}
+            onArchive={() => onArchive(item.id)}
+          />
         ))}
 
         {/* Matching the cards' own padding, now that the column has no gap. */}
@@ -415,9 +579,10 @@ function Column({
 
 export function BoardPage() {
   const { columns, projectCount, loading } = useBoard()
-  const { moveItem } = useContent()
+  const { items, moveItem, updateItem, archiveItem } = useContent()
   // One subscription for the whole board, handed down to the cards.
   const { members } = useMembers()
+  const { member } = useCurrentMember()
   const [composingStageId, setComposingStageId] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -431,6 +596,15 @@ export function BoardPage() {
   */
   const boardIsEmpty = !loading && projectCount === 0
   const firstStageId = columns[0]?.stage.id
+  const canManage = Boolean(member && member.role !== "guest")
+  const descendantCounts = new Map(
+    columns.flatMap((column) =>
+      column.items.map((item) => [
+        item.id,
+        items.filter((candidate) => candidate.ancestorIds.includes(item.id)).length,
+      ]),
+    ),
+  )
 
   /*
     One listener for the whole board, rather than a handler per card.
@@ -556,6 +730,10 @@ export function BoardPage() {
               key={column.stage.id}
               column={column}
               members={members}
+              descendantCounts={descendantCounts}
+              canManage={canManage}
+              onRename={(id, title) => updateItem(id, { title })}
+              onArchive={archiveItem}
               composing={composingStageId === column.stage.id}
               onCompose={() => setComposingStageId(column.stage.id)}
               onCloseCompose={() => setComposingStageId(null)}
