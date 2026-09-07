@@ -1,3 +1,4 @@
+import type { Platform } from "@blomstr/types"
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/lib/supabase"
 
@@ -6,6 +7,7 @@ interface EventPayload {
   from_stage_id?: string
   to_stage_id?: string
   fields?: string[]
+  platform?: Platform
 }
 
 export interface ProjectActivity {

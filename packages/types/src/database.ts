@@ -604,6 +604,67 @@ export type Database = {
           },
         ]
       }
+      publish_targets: {
+        Row: {
+          caption: string
+          content_item_id: string
+          created_at: string
+          id: string
+          platform: Database["public"]["Enums"]["platform"]
+          tags: string[]
+          title: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          caption?: string
+          content_item_id: string
+          created_at?: string
+          id?: string
+          platform: Database["public"]["Enums"]["platform"]
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          caption?: string
+          content_item_id?: string
+          created_at?: string
+          id?: string
+          platform?: Database["public"]["Enums"]["platform"]
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "publish_targets_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_item_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "publish_targets_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "publish_targets_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

@@ -1,9 +1,10 @@
 import type { ContentItem } from "@blomstr/types"
-import { ArrowRight, CalendarClock, Scissors } from "lucide-react"
+import { ArrowRight, Scissors } from "lucide-react"
 import { lazy, Suspense } from "react"
 import { Link, useOutletContext } from "react-router-dom"
 import { DriveFilesPanel } from "@/components/drive-files-panel"
 import { EmptyState } from "@/components/empty-state"
+import { PublishPanel } from "@/components/publish-panel"
 import { ReviewPanel } from "@/components/review-panel"
 import { Button } from "@/components/ui/button"
 import { useContent } from "@/hooks/use-content"
@@ -167,16 +168,5 @@ export function MindmapTab() {
 }
 
 export function PublishTab() {
-  return (
-    <EmptyState
-      icon={CalendarClock}
-      title="Not ready to publish"
-      description="Title, description, thumbnail and tags per platform, plus the schedule. Publishing runs through a job queue, so its progress shows here."
-      action={
-        <Button variant="outline" size="sm" disabled>
-          Set a publish date
-        </Button>
-      }
-    />
-  )
+  return <PublishPanel project={useProject()} />
 }

@@ -122,7 +122,7 @@ project page.
 | Overview tab | Events exist now, so this is buildable |
 | Files tab | §2 |
 | Repurposed tab | §1 |
-| Publish tab | Needs the `jobs` queue wired to Edge Functions |
+| Publish tab | Preparation and manual handoff built; social OAuth and job workers remain |
 
 ---
 

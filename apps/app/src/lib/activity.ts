@@ -1,8 +1,12 @@
+import type { Platform } from "@blomstr/types"
+import { platformLabels } from "@/lib/content"
+
 export interface ActivityDescriptionInput {
   verb: string
   payload: {
     to_stage_id?: string
     fields?: string[]
+    platform?: Platform
   }
   versionNumber: number | null
 }
@@ -62,6 +66,10 @@ export function activityText(
       return "changed a team member's role"
     case "member_removed":
       return "removed a team member"
+    case "publish_target_updated":
+      return entry.payload.platform
+        ? `updated the ${platformLabels[entry.payload.platform]} publishing package`
+        : "updated a publishing package"
     default:
       return entry.verb.replaceAll("_", " ")
   }
