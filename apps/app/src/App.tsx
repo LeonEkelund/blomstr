@@ -3,6 +3,7 @@ import { useAuth } from "@/components/auth-provider"
 import { AppSidebar } from "@/components/layout/app-sidebar"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { useWorkspace } from "@/hooks/use-workspace"
+import { AccountPage } from "@/routes/account"
 import { BoardPage } from "@/routes/board"
 import { CalendarPage } from "@/routes/calendar"
 import { HomePage } from "@/routes/home"
@@ -98,7 +99,7 @@ export function App() {
           <Route path="/tasks" element={<TasksPage />} />
           <Route path="/team" element={<TeamPage />} />
           <Route path="/workspace" element={<WorkspacePage />} />
-          <Route path="/settings" element={<PlaceholderPage title="Account" />} />
+          <Route path="/settings" element={<AccountPage />} />
           <Route path="/integrations" element={<IntegrationsPage />} />
           <Route path="*" element={<PlaceholderPage title="Not found" />} />
         </Route>

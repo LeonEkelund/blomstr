@@ -73,6 +73,18 @@ application before the code is ready.
 sees a file listed and gets "Request access" on click. Generate previews
 server-side with the owner's token so viewing never depends on Drive sharing.
 
+### Maybe: personal Drive connections
+
+The current integration has one owner-managed Google Drive connection per
+workspace. Consider letting each owner, admin, and editor connect their own
+Google account and link files from their own Drive.
+
+This would require changing Drive connections to be unique per workspace and
+user, looking up tokens for the signed-in member, and making Integrations read
+as "Your Google Drive." Existing linked-file records and Google Cloud setup can
+stay unchanged. Google sharing permissions would still control who can open a
+linked file.
+
 ---
 
 ## 3. Mobile approvals
