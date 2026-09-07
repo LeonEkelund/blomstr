@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { NotificationBell } from "@/components/notification-bell"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
 interface PageHeaderProps {
@@ -18,7 +19,10 @@ export function PageHeader({ title, children }: PageHeaderProps) {
       <SidebarTrigger className="dark:hover:bg-muted" />
       <div className="h-4 w-px shrink-0 bg-border" />
       <h1 className="text-sm font-medium">{title}</h1>
-      {children && <div className="ml-auto flex items-center gap-2">{children}</div>}
+      <div className="ml-auto flex items-center gap-2">
+        {children}
+        <NotificationBell />
+      </div>
     </header>
   )
 }

@@ -8,6 +8,7 @@ interface EventPayload {
   to_stage_id?: string
   fields?: string[]
   platform?: Platform
+  user_id?: string
 }
 
 export interface ProjectActivity {

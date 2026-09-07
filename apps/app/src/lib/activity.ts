@@ -66,6 +66,8 @@ export function activityText(
       return "changed a team member's role"
     case "member_removed":
       return "removed a team member"
+    case "assigned":
+      return "assigned a teammate to this project"
     case "publish_target_updated":
       return entry.payload.platform
         ? `updated the ${platformLabels[entry.payload.platform]} publishing package`

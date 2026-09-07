@@ -665,6 +665,74 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          actor_id: string | null
+          content_item_id: string
+          created_at: string
+          event_id: number
+          id: number
+          kind: string
+          payload: Json
+          read_at: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          content_item_id: string
+          created_at?: string
+          event_id: number
+          id?: never
+          kind: string
+          payload?: Json
+          read_at?: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          content_item_id?: string
+          created_at?: string
+          event_id?: number
+          id?: never
+          kind?: string
+          payload?: Json
+          read_at?: string | null
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_item_status"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

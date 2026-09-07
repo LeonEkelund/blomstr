@@ -89,6 +89,9 @@ linked file.
 
 ## 3. Mobile approvals
 
+**Current:** the responsive review flow and in-app notifications are built.
+External push/email delivery and a faster swipe-through review remain.
+
 Review works, but only on a laptop. The creator is the bottleneck and isn't at
 a desk — notification, swipe through what's waiting, approve, from a car.
 

@@ -12,6 +12,7 @@ import {
 import { useEffect, useRef, useState } from "react"
 import { Link, NavLink, Outlet, useNavigate, useParams } from "react-router-dom"
 import { CommentThread } from "@/components/comment-thread"
+import { NotificationBell } from "@/components/notification-bell"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -693,6 +694,7 @@ export function ProjectLayout() {
           Mindmap — with no indication of what it would act on.
         */}
         <div className="ml-auto flex shrink-0 items-center gap-2">
+          <NotificationBell />
           <ProjectMenu item={item} />
           <Button
             variant="ghost"
