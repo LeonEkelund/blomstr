@@ -1,6 +1,7 @@
 import type { WorkspaceRole } from "@blomstr/types"
-import { Check, ChevronDown, Copy, Loader2, UserPlus } from "lucide-react"
+import { ChevronDown, Loader2, UserPlus } from "lucide-react"
 import { useState } from "react"
+import { InviteLink } from "@/components/invite-link"
 import { PageHeader } from "@/components/layout/page-header"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -21,45 +22,6 @@ import { initials, roleDescriptions, roleLabels, roleOrder } from "@/lib/content
 
 /** Staff only — guests are invited from a project, not from here. */
 const STAFF_ROLES: WorkspaceRole[] = ["admin", "editor"]
-
-/**
- * Shown once, immediately after creating an invite.
- *
- * The token exists only in that response — the database stores a hash — so if
- * this is dismissed without copying, the invite has to be revoked and reissued.
- * Hence the warning rather than a quiet close button.
- */
-function InviteLink({ token, onDone }: { token: string; onDone: () => void }) {
-  const [copied, setCopied] = useState(false)
-  const url = `${window.location.origin}/invite/${token}`
-
-  return (
-    <div className="mt-4 rounded-lg border bg-card p-3">
-      <p className="text-sm font-medium">Invite link</p>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Shown once. Copy it now — it cannot be retrieved later.
-      </p>
-      <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
-        <Input readOnly value={url} className="h-8 font-mono text-xs" />
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 shrink-0 gap-1.5"
-          onClick={() => {
-            navigator.clipboard.writeText(url)
-            setCopied(true)
-          }}
-        >
-          {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-          {copied ? "Copied" : "Copy"}
-        </Button>
-        <Button variant="ghost" size="sm" className="h-8" onClick={onDone}>
-          Done
-        </Button>
-      </div>
-    </div>
-  )
-}
 
 function InviteForm() {
   const { invite } = useTeamActions()
@@ -215,16 +177,26 @@ export function TeamPage() {
                             setRole.mutate({ userId: m.id, role: v as WorkspaceRole })
                           }
                         >
-                          {roleOrder.map((r) => (
-                            <DropdownMenuRadioItem key={r} value={r}>
-                              <span className="flex flex-col items-start gap-0.5">
-                                <span className="font-medium">{roleLabels[r]}</span>
-                                <span className="text-xs text-muted-foreground">
-                                  {roleDescriptions[r]}
+                          {/*
+                            Guest is deliberately absent. A guest sees only the
+                            projects they hold a grant for, and grants are
+                            created by redeeming a project invite — so demoting
+                            someone here would leave them in the workspace with
+                            access to nothing and no way to fix it. Guests are
+                            invited from a project.
+                          */}
+                          {roleOrder
+                            .filter((r) => r !== "guest")
+                            .map((r) => (
+                              <DropdownMenuRadioItem key={r} value={r}>
+                                <span className="flex flex-col items-start gap-0.5">
+                                  <span className="font-medium">{roleLabels[r]}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {roleDescriptions[r]}
+                                  </span>
                                 </span>
-                              </span>
-                            </DropdownMenuRadioItem>
-                          ))}
+                              </DropdownMenuRadioItem>
+                            ))}
                         </DropdownMenuRadioGroup>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => remove.mutate(m.id)}>

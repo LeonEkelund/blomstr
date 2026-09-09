@@ -4,6 +4,7 @@ import { lazy, Suspense } from "react"
 import { Link, useOutletContext } from "react-router-dom"
 import { DriveFilesPanel } from "@/components/drive-files-panel"
 import { EmptyState } from "@/components/empty-state"
+import { GuestInvite } from "@/components/guest-invite"
 import { PublishPanel } from "@/components/publish-panel"
 import { ReviewPanel } from "@/components/review-panel"
 import { Button } from "@/components/ui/button"
@@ -140,6 +141,7 @@ export function OverviewTab() {
           </Link>
         ))}
       </section>
+      <GuestInvite contentItemId={project.id} />
     </div>
   )
 }

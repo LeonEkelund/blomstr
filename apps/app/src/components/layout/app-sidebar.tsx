@@ -70,6 +70,17 @@ const secondaryNav: NavItem[] = [
   { to: "/workspace", label: "Workspace", icon: Building2 },
 ]
 
+/*
+  What a guest may navigate to. An allowlist rather than a denylist: a nav item
+  added later should be invisible to guests until someone decides otherwise,
+  which is the safe direction to fail in.
+
+  RLS already scopes what every page returns, so this is not the access control
+  — it is there so a sponsor invited to review one video is not offered My
+  Tasks and a Team page that would be empty or refuse them.
+*/
+const GUEST_NAV = ["/projects"]
+
 /**
  * Rows sit flush against each other so there is no dead zone between them —
  * a gap on the list would drop the pointer cursor and blink the highlight off
@@ -212,6 +223,11 @@ function NavUser() {
 
 export function AppSidebar() {
   const { pathname } = useLocation()
+  const { member } = useCurrentMember()
+
+  const isGuest = member?.role === "guest"
+  const visible = (items: NavItem[]) =>
+    isGuest ? items.filter((item) => GUEST_NAV.includes(item.to)) : items
 
   return (
     <Sidebar collapsible="icon">
@@ -234,21 +250,24 @@ export function AppSidebar() {
         <SidebarGroup className="pt-4">
           <SidebarGroupContent>
             <NavRows
-              items={primaryNav.filter((item) => !item.soon)}
+              items={visible(primaryNav).filter((item) => !item.soon)}
               pathname={pathname}
             />
-            <div className="mt-5 border-t border-sidebar-border pt-3">
-              <NavRows
-                items={primaryNav.filter((item) => item.soon)}
-                pathname={pathname}
-              />
-            </div>
+            {/* Nothing here is built yet, so guests are not shown the teaser. */}
+            {!isGuest && (
+              <div className="mt-5 border-t border-sidebar-border pt-3">
+                <NavRows
+                  items={primaryNav.filter((item) => item.soon)}
+                  pathname={pathname}
+                />
+              </div>
+            )}
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter className="gap-3 pb-3">
-        <NavRows items={secondaryNav} pathname={pathname} />
+        <NavRows items={visible(secondaryNav)} pathname={pathname} />
         <NavUser />
       </SidebarFooter>
     </Sidebar>

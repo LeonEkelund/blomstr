@@ -74,6 +74,15 @@ const tabs = [
   { to: "publish", label: "Publish" },
 ]
 
+/*
+  A guest reads and comments; every other tab writes to content_items, which
+  row-level security refuses them. Without this they would get an editor that
+  accepts typing and silently fails to save — worse than not offering it.
+
+  An allowlist, so a tab added later is hidden from guests by default.
+*/
+const GUEST_TABS = ["overview", "review"]
+
 type RailMode = "details" | "activity" | "chat"
 
 const RAIL_MODE_KEY = "blomstr-project-rail-mode"
@@ -628,11 +637,14 @@ function Rail({
 export function ProjectLayout() {
   const { projectId } = useParams()
   const { items } = useContent()
+  const { member } = useCurrentMember()
   const [railOpen, setRailOpen] = useState(true)
   const [mobileRailOpen, setMobileRailOpen] = useState(false)
   const [railMode, setRailMode] = useState<RailMode>(initialRailMode)
 
   const item = items.find((i) => i.id === projectId)
+  const visibleTabs =
+    member?.role === "guest" ? tabs.filter((tab) => GUEST_TABS.includes(tab.to)) : tabs
 
   function changeRailMode(mode: RailMode) {
     setRailMode(mode)
@@ -737,7 +749,7 @@ export function ProjectLayout() {
           aria-label="Project sections"
           className="flex shrink-0 gap-4 overflow-x-auto border-b bg-background px-4 sm:px-6"
         >
-          {tabs.map((tab) => (
+          {visibleTabs.map((tab) => (
             <NavLink
               key={tab.to}
               to={tab.to}

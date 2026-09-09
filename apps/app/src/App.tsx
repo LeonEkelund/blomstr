@@ -2,6 +2,7 @@ import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom"
 import { useAuth } from "@/components/auth-provider"
 import { AppSidebar } from "@/components/layout/app-sidebar"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { useCurrentMember } from "@/hooks/use-members"
 import { useWorkspace } from "@/hooks/use-workspace"
 import { AccountPage } from "@/routes/account"
 import { BoardPage } from "@/routes/board"
@@ -70,6 +71,20 @@ function AppShell() {
   )
 }
 
+/**
+ * Where signing in drops you.
+ *
+ * Home is built around the whole workspace — what is due, who did what — which
+ * a guest can see almost none of. They came for one project, so send them to
+ * the board, where row-level security leaves exactly the projects they were
+ * granted.
+ */
+function Landing() {
+  const { member } = useCurrentMember()
+
+  return <Navigate to={member?.role === "guest" ? "/projects" : "/home"} replace />
+}
+
 export function App() {
   return (
     <Routes>
@@ -82,7 +97,7 @@ export function App() {
         <Route path="/invite/:token" element={<InvitePage />} />
 
         <Route element={<AppShell />}>
-          <Route path="/" element={<Navigate to="/home" replace />} />
+          <Route path="/" element={<Landing />} />
           <Route path="/projects" element={<BoardPage />} />
           <Route path="/projects/:projectId" element={<ProjectLayout />}>
             <Route index element={<Navigate to="overview" replace />} />

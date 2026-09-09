@@ -62,11 +62,25 @@ export function useTeamActions() {
     there is no way to retrieve it afterwards.
   */
   const invite = useMutation({
-    mutationFn: async ({ role, email }: { role: WorkspaceRole; email?: string }) => {
+    mutationFn: async ({
+      role,
+      email,
+      contentItemId,
+    }: {
+      role: WorkspaceRole
+      email?: string
+      /*
+        Scopes the invite to one project. redeem_invite writes the matching
+        guest_grants row, and can_read_item cascades it down every derivative —
+        so granting a podcast episode also grants its clips.
+      */
+      contentItemId?: string
+    }) => {
       const { data, error } = await supabase.rpc("create_invite", {
         p_workspace_id: workspace?.id,
         p_role: role,
         p_email: email?.trim() || undefined,
+        p_content_item_id: contentItemId,
       })
       if (error) throw error
       return data as string
