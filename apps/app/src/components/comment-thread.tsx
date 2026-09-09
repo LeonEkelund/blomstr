@@ -57,7 +57,7 @@ export function CommentThread({
               return (
                 <li key={c.id} className="flex gap-2.5">
                   <Avatar className="mt-0.5 size-6 shrink-0">
-                    <AvatarFallback className="text-[10px]">
+                    <AvatarFallback name={author?.name} className="text-[10px]">
                       {initials(author?.name ?? "?")}
                     </AvatarFallback>
                   </Avatar>
@@ -84,7 +84,9 @@ export function CommentThread({
                         </Badge>
                       )}
                     </p>
-                    <p className="mt-0.5 text-sm whitespace-pre-wrap">{c.body}</p>
+                    <p className="mt-1 text-sm leading-relaxed break-words whitespace-pre-wrap">
+                      {c.body}
+                    </p>
                   </div>
                 </li>
               )

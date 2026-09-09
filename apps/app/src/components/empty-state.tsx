@@ -30,11 +30,11 @@ export function EmptyState({
         className,
       )}
     >
-      <div className="rounded-full border bg-card p-3">
-        <Icon className="size-5 text-muted-foreground" />
+      <div className="rounded-2xl border border-primary/20 bg-accent p-4">
+        <Icon className="size-6 text-accent-foreground" />
       </div>
-      <h2 className="mt-4 text-sm font-medium">{title}</h2>
-      <p className="mt-1 max-w-xs text-sm text-balance text-muted-foreground">
+      <h2 className="mt-5 text-lg font-semibold">{title}</h2>
+      <p className="mt-2 max-w-sm text-sm leading-relaxed text-balance text-muted-foreground">
         {description}
       </p>
       {action && <div className="mt-4">{action}</div>}

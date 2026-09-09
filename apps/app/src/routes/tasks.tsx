@@ -31,8 +31,8 @@ export function TasksPage() {
       </PageHeader>
       <main className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="mx-auto max-w-4xl">
-          <div className="mb-5">
-            <h2 className="text-lg font-semibold">Your work</h2>
+          <div className="mb-7">
+            <h2 className="page-title">Your work</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Projects and deliverables assigned to you, including clips and other
               repurposed work.
@@ -54,7 +54,7 @@ export function TasksPage() {
               </p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-xl border bg-card">
+            <div className="surface-panel overflow-hidden">
               {assigned.map((item) => {
                 const parent = item.parentId
                   ? items.find((candidate) => candidate.id === item.parentId)
@@ -63,7 +63,7 @@ export function TasksPage() {
                   <Link
                     key={item.id}
                     to={`/projects/${item.id}/overview`}
-                    className="group flex items-center gap-4 border-b p-4 last:border-b-0 hover:bg-muted/40"
+                    className="group flex items-center gap-4 border-b p-5 transition-colors last:border-b-0 hover:bg-accent/40"
                   >
                     <div className="min-w-0 flex-1">
                       {parent && (
@@ -71,13 +71,12 @@ export function TasksPage() {
                           {parent.title}
                         </p>
                       )}
-                      <p className="truncate text-sm font-medium">{item.title}</p>
+                      <p className="truncate text-[0.9375rem] font-semibold">
+                        {item.title}
+                      </p>
                       <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                         {item.type && <span>{typeLabels[item.type]}</span>}
-                        <Badge
-                          variant="secondary"
-                          className="h-5 text-[10px] font-normal"
-                        >
+                        <Badge variant="secondary" className="h-6 text-xs font-medium">
                           {approvalLabels[item.approvalState]}
                         </Badge>
                         {item.dueAt && (

@@ -271,7 +271,7 @@ export function DriveFilesPanel({ project }: { project: ContentItem }) {
       <div className="mx-auto max-w-3xl">
         <div className="mb-4 flex items-center gap-3">
           <div>
-            <h2 className="text-sm font-medium">Google Drive</h2>
+            <h2 className="section-title">Google Drive</h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
               {files.length} {files.length === 1 ? "file" : "files"}
             </p>
@@ -304,11 +304,11 @@ export function DriveFilesPanel({ project }: { project: ContentItem }) {
           )}
         </div>
 
-        <ul className="divide-y overflow-hidden rounded-xl border bg-card">
+        <ul className="surface-panel divide-y overflow-hidden">
           {files.map((file) => (
             <li
               key={file.id}
-              className="flex flex-wrap items-center gap-2 p-3 sm:flex-nowrap sm:gap-3"
+              className="grid grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 p-4 sm:grid-cols-[2.25rem_minmax(0,1fr)_auto_auto]"
             >
               <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
                 <File className="size-4 text-muted-foreground" strokeWidth={1.5} />
@@ -323,7 +323,7 @@ export function DriveFilesPanel({ project }: { project: ContentItem }) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="ml-12 sm:ml-0"
+                className="col-start-2 row-start-2 justify-self-start sm:col-start-3 sm:row-start-1"
                 render={
                   <a
                     href={`https://drive.google.com/open?id=${encodeURIComponent(file.driveFileId)}`}
@@ -339,6 +339,7 @@ export function DriveFilesPanel({ project }: { project: ContentItem }) {
                 <Button
                   variant="ghost"
                   size="icon-sm"
+                  className="col-start-3 row-start-2 text-muted-foreground hover:text-destructive sm:col-start-4 sm:row-start-1"
                   aria-label={`Remove ${file.title}`}
                   disabled={remove.isPending}
                   onClick={() => remove.mutate(file.id)}

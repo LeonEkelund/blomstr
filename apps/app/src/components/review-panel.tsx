@@ -139,7 +139,7 @@ export function ReviewPanel({ project }: { project: ContentItem }) {
         </div>
       ) : (
         <>
-          <header className="flex shrink-0 flex-wrap items-center gap-2 border-b px-3 py-3 sm:px-6">
+          <header className="flex shrink-0 flex-wrap items-center gap-2 border-b bg-card/65 px-3 py-3 sm:px-6">
             {/*
               The version picker lives here rather than in a strip along the
               bottom: a tall image pushed that strip off screen, so switching
@@ -190,7 +190,7 @@ export function ReviewPanel({ project }: { project: ContentItem }) {
               </span>
             )}
 
-            <div className="ml-auto flex flex-wrap items-center justify-end gap-2 max-sm:w-full">
+            <div className="grid w-full grid-cols-2 gap-2 sm:ml-auto sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:justify-end">
               {/*
                 Available to anyone who can see the version, guests included —
                 a sponsor reviewing an ad read wants the file, not a screenshot
@@ -200,7 +200,7 @@ export function ReviewPanel({ project }: { project: ContentItem }) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 gap-1.5 px-2 text-xs"
+                  className="min-h-9 gap-1.5 px-3 text-xs"
                   render={
                     <a
                       href={current.downloadUrl}
@@ -211,14 +211,14 @@ export function ReviewPanel({ project }: { project: ContentItem }) {
                   }
                 >
                   <Download className="size-3.5" strokeWidth={1.5} />
-                  <span className="hidden sm:inline">Download</span>
+                  <span>Download</span>
                 </Button>
               )}
 
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 gap-1.5 px-2 text-xs"
+                className="min-h-9 gap-1.5 px-3 text-xs"
                 disabled={upload.isPending}
                 onClick={() => fileRef.current?.click()}
               >
@@ -227,7 +227,7 @@ export function ReviewPanel({ project }: { project: ContentItem }) {
                 ) : (
                   <Upload className="size-3.5" strokeWidth={1.5} />
                 )}
-                <span className="hidden sm:inline">New version</span>
+                <span>New version</span>
               </Button>
 
               {canApprove && awaitingReview && current && (
@@ -235,15 +235,15 @@ export function ReviewPanel({ project }: { project: ContentItem }) {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-7 gap-1.5 px-2 text-xs"
+                    className="min-h-9 gap-1.5 px-3 text-xs"
                     onClick={() => setNote("")}
                   >
                     <MessageSquareReply className="size-3.5" strokeWidth={1.5} />
-                    <span className="hidden sm:inline">Request changes</span>
+                    <span>Request changes</span>
                   </Button>
                   <Button
                     size="sm"
-                    className="h-7 gap-1.5 px-2 text-xs"
+                    className="min-h-9 gap-1.5 px-3 text-xs"
                     disabled={approve.isPending}
                     onClick={() => approve.mutate(current.id)}
                   >
@@ -252,7 +252,7 @@ export function ReviewPanel({ project }: { project: ContentItem }) {
                     ) : (
                       <Check className="size-3.5" strokeWidth={1.5} />
                     )}
-                    <span className="hidden sm:inline">Approve</span>
+                    <span>Approve</span>
                   </Button>
                 </>
               )}
@@ -307,7 +307,7 @@ export function ReviewPanel({ project }: { project: ContentItem }) {
                 <img
                   src={current.url}
                   alt={`Version ${current.number}`}
-                  className="mx-auto max-h-full rounded-lg border bg-card"
+                  className="mx-auto max-h-full rounded-xl border bg-card shadow-sm"
                 />
               ) : (
                 <p className="text-sm text-muted-foreground">

@@ -67,8 +67,10 @@ export function OverviewTab() {
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-4 py-10 sm:px-6 sm:py-16">
-      <p className="text-xs font-medium text-muted-foreground">Current status</p>
-      <h2 className="mt-2 text-xl font-semibold tracking-tight">
+      <p className="text-xs font-semibold uppercase tracking-widest text-accent-foreground">
+        Current status
+      </p>
+      <h2 className="mt-3 text-3xl font-semibold tracking-tight">
         {approvalLabels[project.approvalState]}
       </h2>
       <p className="mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground">

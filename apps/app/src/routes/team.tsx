@@ -159,14 +159,14 @@ export function TeamPage() {
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         <div className="mx-auto max-w-2xl">
           <section>
-            <h2 className="text-sm font-medium">People</h2>
+            <h2 className="section-title">People</h2>
 
-            <ul className="mt-3 divide-y rounded-lg border bg-card">
+            <ul className="surface-panel mt-4 divide-y">
               {loading && <li className="p-3 text-sm text-muted-foreground">Loading…</li>}
               {members.map((m) => (
-                <li key={m.id} className="flex items-center gap-3 p-3">
+                <li key={m.id} className="flex items-center gap-3 p-4">
                   <Avatar className="size-8 shrink-0">
-                    <AvatarFallback className="text-xs">
+                    <AvatarFallback name={m.name} className="text-xs">
                       {initials(m.name)}
                     </AvatarFallback>
                   </Avatar>
@@ -246,16 +246,16 @@ export function TeamPage() {
 
           {isOwner && (
             <section className="mt-8">
-              <h2 className="text-sm font-medium">Invite someone</h2>
+              <h2 className="section-title">Invite someone</h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 Guests are invited from a project instead, so they only ever see that one.
               </p>
               <InviteForm />
 
               {pending.length > 0 && (
-                <ul className="mt-4 divide-y rounded-lg border bg-card">
+                <ul className="surface-panel mt-4 divide-y">
                   {pending.map((i) => (
-                    <li key={i.id} className="flex items-center gap-3 p-3">
+                    <li key={i.id} className="flex items-center gap-3 p-4">
                       <div className="min-w-0 flex-1">
                         <p className="text-sm">
                           {roleLabels[i.role]} invite

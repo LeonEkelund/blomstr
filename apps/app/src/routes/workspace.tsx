@@ -114,7 +114,7 @@ export function WorkspacePage() {
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         <div className="mx-auto max-w-2xl">
           <section>
-            <h2 className="text-sm font-medium">General</h2>
+            <h2 className="section-title">General</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               The name shown to everyone in this workspace.
             </p>
@@ -156,12 +156,12 @@ export function WorkspacePage() {
           </section>
 
           <section className="mt-10">
-            <h2 className="text-sm font-medium">Archive</h2>
+            <h2 className="section-title">Archive</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Archived projects stay out of the board until you restore them.
             </p>
 
-            <div className="mt-4 overflow-hidden rounded-lg border bg-card">
+            <div className="surface-panel mt-4 overflow-hidden">
               {loadingArchived ? (
                 <div className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
                   <Loader2 className="size-4 animate-spin" />
@@ -174,7 +174,7 @@ export function WorkspacePage() {
               ) : archived.length === 0 ? (
                 <div className="flex flex-col items-center px-6 py-10 text-center">
                   <Archive className="size-5 text-muted-foreground" strokeWidth={1.5} />
-                  <p className="mt-3 text-sm font-medium">Archive is empty</p>
+                  <p className="mt-3 section-title">Archive is empty</p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     Projects you archive will appear here.
                   </p>

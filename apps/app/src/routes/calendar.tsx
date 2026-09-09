@@ -68,7 +68,7 @@ function EventLink({ event }: { event: CalendarEvent }) {
       to={`/projects/${event.item.id}/overview`}
       title={`${label}: ${event.item.title}`}
       className={cn(
-        "block truncate rounded-md px-2 py-1 text-xs transition-colors",
+        "block truncate rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
         event.kind === "publish"
           ? "bg-primary text-primary-foreground hover:bg-primary/85"
           : "border bg-card text-card-foreground hover:bg-muted",
@@ -137,9 +137,7 @@ export function CalendarPage() {
       <main className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="mx-auto max-w-7xl">
           <div className="mb-4 flex flex-wrap items-center gap-2">
-            <h2 className="mr-auto text-lg font-semibold tracking-tight">
-              {format(visibleMonth, "MMMM yyyy")}
-            </h2>
+            <h2 className="page-title mr-auto">{format(visibleMonth, "MMMM yyyy")}</h2>
             <Button
               variant="outline"
               size="sm"
@@ -170,7 +168,7 @@ export function CalendarPage() {
           </div>
 
           <div className="hidden overflow-x-auto pb-2 md:block">
-            <div className="min-w-3xl overflow-hidden rounded-xl border bg-card">
+            <div className="surface-panel min-w-3xl overflow-hidden">
               <div className="grid grid-cols-7 border-b bg-muted/40">
                 {weekdays.map((weekday) => (
                   <div

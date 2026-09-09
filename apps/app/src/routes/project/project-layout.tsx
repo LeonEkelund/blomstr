@@ -9,6 +9,7 @@ import {
   Search,
   X,
 } from "lucide-react"
+import { LayoutGroup, motion } from "motion/react"
 import { useEffect, useRef, useState } from "react"
 import { Link, NavLink, Outlet, useNavigate, useParams } from "react-router-dom"
 import { CommentThread } from "@/components/comment-thread"
@@ -36,6 +37,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { ActiveTabIndicator } from "@/components/ui/motion"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { SidebarTrigger } from "@/components/ui/sidebar"
@@ -97,7 +99,7 @@ function StagePicker({ item }: { item: ContentItem }) {
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs">
+          <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2.5 text-xs">
             {current?.name ?? "No stage"}
             <ChevronDown className="size-3.5 text-muted-foreground" />
           </Button>
@@ -163,7 +165,7 @@ function AssigneePicker({ item }: { item: ContentItem }) {
               onSelect={(event) => event.preventDefault()}
             >
               <Avatar className="size-5">
-                <AvatarFallback className="text-[9px]">
+                <AvatarFallback name={member.name} className="text-[9px]">
                   {initials(member.name)}
                 </AvatarFallback>
               </Avatar>
@@ -262,7 +264,7 @@ function ProjectMenu({ item }: { item: ContentItem }) {
             <Button
               variant="ghost"
               size="icon"
-              className="size-7"
+              className="size-8"
               aria-label="Project actions"
             >
               <MoreHorizontal className="size-4" />
@@ -307,7 +309,7 @@ function ProjectMenu({ item }: { item: ContentItem }) {
 
 function RailField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[5.5rem_1fr] items-start gap-2 px-4 py-1.5">
+    <div className="grid grid-cols-[5.5rem_1fr] items-start gap-2 px-4 py-2.5">
       <span className="pt-0.5 text-xs text-muted-foreground">{label}</span>
       <div className="min-w-0 text-sm">{children}</div>
     </div>
@@ -475,7 +477,7 @@ function ActivityLog({ item }: { item: ContentItem }) {
           {activity.map((entry) => (
             <li key={entry.id} className="flex gap-2.5">
               <Avatar className="mt-0.5 size-5 shrink-0">
-                <AvatarFallback className="text-[9px]">
+                <AvatarFallback name={entry.actorName} className="text-[9px]">
                   {initials(entry.actorName)}
                 </AvatarFallback>
               </Avatar>
@@ -544,7 +546,7 @@ function Rail({
     <aside
       className={cn(
         "min-h-0 shrink-0 flex-col",
-        mobile ? "flex min-h-0 w-full flex-1" : "hidden w-80 border-l lg:flex",
+        mobile ? "flex min-h-0 w-full flex-1" : "hidden w-80 border-l bg-card/65 lg:flex",
       )}
     >
       <nav className="grid shrink-0 grid-cols-3 border-b p-2" aria-label="Project panel">
@@ -580,7 +582,7 @@ function Rail({
                     className="flex items-center gap-1.5 text-xs text-muted-foreground"
                   >
                     <Avatar className="size-5">
-                      <AvatarFallback className="text-[9px]">
+                      <AvatarFallback name={member.name} className="text-[9px]">
                         {initials(member.name)}
                       </AvatarFallback>
                     </Avatar>
@@ -658,7 +660,7 @@ export function ProjectLayout() {
   return (
     <>
       {/* h-14 to line the rule up with the board's header and the sidebar's. */}
-      <header className="flex h-14 shrink-0 items-center gap-2 border-b px-3 sm:gap-3 sm:px-4">
+      <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-card/60 px-3 sm:gap-3 sm:px-4">
         <SidebarTrigger className="dark:hover:bg-muted" />
         <div className="h-4 w-px shrink-0 bg-border" />
 
@@ -708,7 +710,7 @@ export function ProjectLayout() {
           <Button
             variant="ghost"
             size="icon"
-            className="hidden size-7 lg:inline-flex"
+            className="hidden size-8 lg:inline-flex"
             onClick={() => setRailOpen((open) => !open)}
             aria-label={railOpen ? "Hide project panel" : "Show project panel"}
           >
@@ -722,25 +724,34 @@ export function ProjectLayout() {
       </header>
 
       {/* Tabs are routes, so every one of them is a shareable link. */}
-      <nav className="flex shrink-0 gap-1 overflow-x-auto border-b px-4">
-        {tabs.map((tab) => (
-          <NavLink
-            key={tab.to}
-            to={tab.to}
-            className={({ isActive }) =>
-              cn(
-                "-mb-px shrink-0 border-b-2 px-2.5 py-2.5 text-sm transition-colors",
-                isActive
-                  ? "border-foreground font-medium text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground",
-              )
-            }
-          >
-            {tab.label}
-          </NavLink>
-        ))}
-      </nav>
-
+      <LayoutGroup id={`project-tabs-${item.id}`}>
+        <motion.nav
+          layoutScroll
+          className="flex shrink-0 gap-1 overflow-x-auto border-b bg-card/60 px-4 py-2"
+        >
+          {tabs.map((tab) => (
+            <NavLink
+              key={tab.to}
+              to={tab.to}
+              className={({ isActive }) =>
+                cn(
+                  "relative isolate shrink-0 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  isActive
+                    ? "text-accent-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                )
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  {isActive && <ActiveTabIndicator />}
+                  {tab.label}
+                </>
+              )}
+            </NavLink>
+          ))}
+        </motion.nav>
+      </LayoutGroup>
       <div className="flex min-h-0 flex-1">
         <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
           <Outlet context={item} />
@@ -750,7 +761,7 @@ export function ProjectLayout() {
 
       <Sheet open={mobileRailOpen} onOpenChange={setMobileRailOpen}>
         <SheetContent side="right" className="w-[min(100%,24rem)] gap-0 p-0 lg:hidden">
-          <div className="flex h-12 shrink-0 items-center border-b px-4 pr-12">
+          <div className="flex h-16 shrink-0 items-center border-b px-4 pr-16">
             <SheetTitle>Project panel</SheetTitle>
           </div>
           <Rail item={item} mode={railMode} onModeChange={changeRailMode} mobile />

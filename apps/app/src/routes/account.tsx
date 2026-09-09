@@ -43,7 +43,7 @@ function SettingSection({
 }) {
   return (
     <section className="mt-10 first:mt-0">
-      <h2 className="text-sm font-medium">{title}</h2>
+      <h2 className="section-title">{title}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{description}</p>
       <div className="mt-4">{children}</div>
     </section>
@@ -131,17 +131,16 @@ export function AccountPage() {
             title="Profile"
             description="The name your teammates see across blomstr."
           >
-            <form
-              className="rounded-xl border bg-card p-4 sm:p-5"
-              onSubmit={submitProfile}
-            >
+            <form className="surface-panel p-5 sm:p-6" onSubmit={submitProfile}>
               <div className="flex items-center gap-3 border-b pb-4">
                 {loadingProfile ? (
                   <Skeleton className="size-11 rounded-full" />
                 ) : (
                   <Avatar className="size-11">
                     {profile?.avatarUrl && <AvatarImage src={profile.avatarUrl} alt="" />}
-                    <AvatarFallback>{initials}</AvatarFallback>
+                    <AvatarFallback name={profile?.displayName || fallbackName}>
+                      {initials}
+                    </AvatarFallback>
                   </Avatar>
                 )}
                 <div className="min-w-0">

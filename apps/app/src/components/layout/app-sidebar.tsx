@@ -84,7 +84,7 @@ const navButton = [
   "text-sidebar-foreground/70 hover:text-sidebar-foreground data-active:text-sidebar-foreground",
   // No weight change on active: it shifts the label by ~1px and reads as jitter
   // when navigating. Background and text opacity carry the state instead.
-  "data-active:font-normal",
+  "font-medium data-active:font-medium data-active:text-sidebar-accent-foreground",
 ].join(" ")
 
 function NavRows({ items, pathname }: { items: NavItem[]; pathname: string }) {
@@ -169,7 +169,9 @@ function NavUser() {
             render={
               <SidebarMenuButton size="lg" tooltip={name}>
                 <Avatar className="size-8">
-                  <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+                  <AvatarFallback name={name} className="text-xs">
+                    {initials}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left leading-tight">
                   <span className="truncate text-sm font-medium">{name}</span>
@@ -222,7 +224,7 @@ export function AppSidebar() {
         width transition.
       */}
       <SidebarHeader className="h-14 flex-row items-center gap-2 border-b px-3 py-0">
-        <Logo className="size-6 shrink-0" />
+        <Logo className="size-6 shrink-0 text-primary" />
         <span className="truncate text-sm font-semibold tracking-tight group-data-[collapsible=icon]:hidden">
           blomstr
         </span>

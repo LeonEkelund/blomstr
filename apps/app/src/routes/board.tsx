@@ -97,7 +97,7 @@ const Card = memo(function Card({
   }
 
   return (
-    <article className="relative rounded-lg border bg-card p-3 transition-colors group-hover/card:border-foreground/20">
+    <article className="board-card relative rounded-xl border bg-card p-4 transition-[border-color,box-shadow] group-hover/card:border-ring/40">
       {renaming ? (
         <input
           // biome-ignore lint/a11y/noAutofocus: opened by an explicit rename action
@@ -105,7 +105,7 @@ const Card = memo(function Card({
           value={draft}
           maxLength={160}
           aria-label="Project title"
-          className="relative z-20 w-full rounded-sm bg-transparent pr-7 text-sm leading-snug font-medium outline-none ring-1 ring-ring"
+          className="relative z-20 w-full rounded-sm bg-transparent pr-7 text-sm leading-relaxed font-semibold outline-none ring-1 ring-ring"
           onPointerDown={(event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}
           onBlur={commitRename}
@@ -120,7 +120,7 @@ const Card = memo(function Card({
           }}
         />
       ) : (
-        <h3 className={cn("text-sm leading-snug font-medium", canManage && "pr-7")}>
+        <h3 className={cn("text-sm leading-relaxed font-semibold", canManage && "pr-7")}>
           {item.title}
         </h3>
       )}
@@ -221,7 +221,7 @@ const Card = memo(function Card({
           <div className="flex -space-x-1.5">
             {assignees.map((m) => (
               <Avatar key={m.id} className="size-6 border-2 border-card">
-                <AvatarFallback className="text-[10px]">
+                <AvatarFallback name={m.name} className="text-[10px]">
                   {initials(m.name)}
                 </AvatarFallback>
               </Avatar>
@@ -433,7 +433,7 @@ function Composer({ stageId, onClose }: { stageId: string; onClose: () => void }
             onClose()
           }
         }}
-        className="w-full resize-none bg-transparent text-sm leading-snug font-medium outline-none placeholder:font-normal placeholder:text-muted-foreground"
+        className="w-full resize-none bg-transparent text-sm leading-relaxed font-semibold outline-none placeholder:font-normal placeholder:text-muted-foreground"
       />
     </div>
   )
@@ -524,7 +524,9 @@ function Column({
     <section className="flex w-[calc(100vw-2rem)] shrink-0 snap-center flex-col sm:w-72 sm:snap-start">
       <header className="flex items-center gap-2 px-1 pb-3">
         <h2 className="text-sm font-medium">{column.stage.name}</h2>
-        <span className="text-xs text-muted-foreground">{column.items.length}</span>
+        <span className="flex h-5 min-w-5 items-center justify-center rounded-md bg-muted px-1 text-[11px] font-medium text-muted-foreground tabular-nums">
+          {column.items.length}
+        </span>
         {/*
           Always visible rather than revealed on hover — a hover-only control
           is invisible on touch and easy to miss on a first visit.
@@ -533,7 +535,7 @@ function Column({
           type="button"
           onClick={onCompose}
           aria-label={`Add a project to ${column.stage.name}`}
-          className="-mr-1 ml-auto flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          className="-mr-1 ml-auto flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         >
           <Plus strokeWidth={1.5} className="size-4" />
         </button>

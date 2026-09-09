@@ -15,7 +15,7 @@ function Avatar({
       data-slot="avatar"
       data-size={size}
       className={cn(
-        "group/avatar relative flex size-8 shrink-0 rounded-full select-none after:absolute after:inset-0 after:rounded-full after:border after:border-border after:mix-blend-darken data-[size=lg]:size-10 data-[size=sm]:size-6 dark:after:mix-blend-lighten",
+        "group/avatar relative isolate flex size-8 shrink-0 rounded-full shadow-xs select-none after:pointer-events-none after:absolute after:inset-0 after:rounded-full after:border after:border-foreground/10 data-[size=lg]:size-10 data-[size=sm]:size-6",
         className,
       )}
       {...props}
@@ -33,16 +33,40 @@ function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
   )
 }
 
-function AvatarFallback({ className, ...props }: AvatarPrimitive.Fallback.Props) {
+const avatarTones = [
+  "green-1",
+  "green-2",
+  "green-3",
+  "green-4",
+  "green-5",
+  "green-6",
+] as const
+
+function AvatarFallback({
+  className,
+  name,
+  children,
+  ...props
+}: AvatarPrimitive.Fallback.Props & { name?: string }) {
+  const seed = (name ?? (typeof children === "string" ? children : ""))
+    .trim()
+    .toLowerCase()
+  let hash = 0
+  for (const character of seed) hash = (Math.imul(hash, 31) + character.charCodeAt(0)) | 0
+  const tone = avatarTones[(hash >>> 0) % avatarTones.length]
+
   return (
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
+      data-tone={tone}
       className={cn(
-        "flex size-full items-center justify-center rounded-full bg-muted text-sm text-muted-foreground group-data-[size=sm]/avatar:text-xs",
+        "avatar-initials flex size-full items-center justify-center rounded-full text-sm font-semibold tracking-tight group-data-[size=sm]/avatar:text-xs",
         className,
       )}
       {...props}
-    />
+    >
+      {children}
+    </AvatarPrimitive.Fallback>
   )
 }
 

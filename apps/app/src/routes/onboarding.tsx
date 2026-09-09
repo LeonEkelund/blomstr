@@ -61,12 +61,10 @@ export function OnboardingPage() {
 
   return (
     <main className="flex min-h-svh flex-col items-center justify-center px-6 py-12">
-      <div className="w-full max-w-[22rem]">
+      <div className="surface-panel w-full max-w-[26rem] p-6 sm:p-8">
         <div className="flex flex-col items-center text-center">
-          <Logo className="size-10" />
-          <h1 className="mt-4 text-xl font-semibold tracking-tight">
-            Name your workspace
-          </h1>
+          <Logo className="size-10 text-primary" />
+          <h1 className="page-title mt-5">Name your workspace</h1>
           <p className="mt-1.5 min-h-5 text-sm text-muted-foreground">
             You can change this later.
           </p>

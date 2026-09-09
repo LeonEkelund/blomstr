@@ -49,96 +49,74 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Green carries the brand; neutral surfaces keep content in focus. */
 :root {
-  /*
-    Canvas sits below the surfaces that float on it, so cards and popovers read
-    as raised without relying on their border alone. Dark mode already had this
-    separation (0.145 canvas vs 0.205 card); light mode is matched to it here.
-  */
-  --background: oklch(0.97 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  /* A surface, like the cards — so it lifts off the canvas rather than sinking. */
-  --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  --mindmap-canvas: oklch(0.97 0 0);
-  --mindmap-status: oklch(1 0 0 / 88%);
-  --mindmap-status-foreground: oklch(0.439 0 0);
-  --mindmap-error: oklch(0.577 0.245 27.325);
+  /* First-paint fallbacks; MotionProvider synchronizes these from lib/motion.ts. */
+  --motion-quick: 150ms;
+  --motion-standard: 180ms;
+  --motion-panel: 200ms;
+  --motion-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  color-scheme: light;
+  --background: #f4f6f3;
+  --foreground: #202b24;
+  --card: #ffffff;
+  --popover: #ffffff;
+  --secondary: #eaf0e9;
+  --secondary-foreground: #344c3b;
+  --muted: #edf1ec;
+  --muted-foreground: #5f6d63;
+  --accent: #e4f3e7;
+  --accent-foreground: #216438;
+  --destructive: #b83434;
+  --border: #dfe6df;
+  --input: #b5c2b8;
+  --ring: #248744;
+  --chart-1: #248744;
+  --chart-2: #6aab80;
+  --chart-3: #66879a;
+  --chart-4: #ba985c;
+  --chart-5: #967ca8;
+  --radius: 0.75rem;
+  --sidebar: #fafcf9;
+  --card-foreground: var(--foreground);
+  --popover-foreground: var(--foreground);
+  --primary: #49c470;
+  --primary-foreground: #102c19;
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+  --mindmap-canvas: var(--background);
+  --mindmap-status: var(--card);
+  --mindmap-status-foreground: var(--muted-foreground);
+  --mindmap-error: var(--destructive);
 }
 
 .dark {
-  /*
-    Lifted off the stock shadcn values, which sit at 0.145 canvas against a
-    0.985 foreground — near-black under near-white, which reads as glare on a
-    screen you look at all day.
-
-    The surface hierarchy is unchanged, just shifted up: canvas below cards,
-    cards below hover states. Text is softened rather than pure white; the
-    contrast is still far past what accessibility needs.
-  */
-  --background: oklch(0.19 0 0);
-  --foreground: oklch(0.96 0 0);
-  --card: oklch(0.235 0 0);
-  --card-foreground: oklch(0.96 0 0);
-  --popover: oklch(0.235 0 0);
-  --popover-foreground: oklch(0.96 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.29 0 0);
-  --secondary-foreground: oklch(0.96 0 0);
-  --muted: oklch(0.29 0 0);
-  --muted-foreground: oklch(0.72 0 0);
-  --accent: oklch(0.29 0 0);
-  --accent-foreground: oklch(0.96 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.235 0 0);
-  --sidebar-foreground: oklch(0.96 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.96 0 0);
-  --sidebar-accent: oklch(0.29 0 0);
-  --sidebar-accent-foreground: oklch(0.96 0 0);
-  --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: oklch(0.556 0 0);
-  --mindmap-canvas: oklch(0.19 0 0);
-  --mindmap-status: oklch(0.235 0 0 / 88%);
-  --mindmap-status-foreground: oklch(0.72 0 0);
-  --mindmap-error: oklch(0.704 0.191 22.216);
+  color-scheme: dark;
+  --background: #171c19;
+  --foreground: #edf3ee;
+  --card: #202722;
+  --popover: #28312b;
+  --secondary: #2c372f;
+  --secondary-foreground: #dde9df;
+  --muted: #29332c;
+  --muted-foreground: #a6b5a9;
+  --accent: #293e30;
+  --accent-foreground: #90dda8;
+  --destructive: #ff9393;
+  --border: #354238;
+  --input: #5b6d60;
+  --ring: #49c470;
+  --chart-1: #49c470;
+  --chart-2: #8ed7a4;
+  --chart-3: #83aec2;
+  --chart-4: #d4b578;
+  --chart-5: #b39aca;
+  --sidebar: #1c231e;
 }
 
 @layer base {
@@ -147,6 +125,13 @@
   }
   body {
     @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.025em;
+    text-wrap: balance;
   }
   html {
     @apply font-sans;
@@ -164,6 +149,134 @@
   someone wrote, not as a form field with rich text bolted on.
 */
 @layer components {
+  .avatar-initials {
+    --avatar-light: color-mix(in srgb, var(--primary) 25%, white);
+    --avatar-ink: color-mix(in srgb, var(--primary) 25%, #102c19);
+    background: linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--avatar-light), white 25%),
+      var(--avatar-light)
+    );
+    color: var(--avatar-ink);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 35%);
+  }
+
+  .avatar-initials[data-tone="green-2"] {
+    --avatar-light: color-mix(in srgb, var(--primary) 35%, white);
+    --avatar-ink: color-mix(in srgb, var(--primary) 30%, #102c19);
+  }
+  .avatar-initials[data-tone="green-3"] {
+    --avatar-light: color-mix(in srgb, var(--primary) 45%, white);
+    --avatar-ink: color-mix(in srgb, var(--primary) 25%, #102c19);
+  }
+  .avatar-initials[data-tone="green-4"] {
+    --avatar-light: color-mix(in srgb, var(--primary) 55%, white);
+    --avatar-ink: color-mix(in srgb, var(--primary) 20%, #102c19);
+  }
+  .avatar-initials[data-tone="green-5"] {
+    --avatar-light: color-mix(in srgb, var(--primary) 70%, white);
+    --avatar-ink: color-mix(in srgb, var(--primary) 15%, #102c19);
+  }
+  .avatar-initials[data-tone="green-6"] {
+    --avatar-light: color-mix(in srgb, var(--primary) 85%, white);
+    --avatar-ink: #102c19;
+  }
+
+  .dark .avatar-initials {
+    background: linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--avatar-ink), #202722 35%),
+      color-mix(in srgb, var(--avatar-ink), #202722 65%)
+    );
+    color: var(--avatar-light);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 8%);
+  }
+
+  .page-title {
+    font-size: clamp(1.375rem, 2.5vw, 1.75rem);
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.035em;
+  }
+
+  .section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.5;
+    letter-spacing: -0.02em;
+  }
+
+  .surface-panel {
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) * 1.4);
+    background: var(--card);
+    box-shadow: 0 2px 8px -4px rgb(12 32 18 / 12%);
+  }
+
+  .board-card {
+    box-shadow: 0 2px 5px -3px rgb(12 32 18 / 18%);
+  }
+
+  @media (hover: hover) {
+    .board-card:hover {
+      box-shadow: 0 6px 16px -8px rgb(12 32 18 / 25%);
+    }
+  }
+
+  textarea:not(.excalidraw textarea) {
+    background: var(--card);
+    transition:
+      border-color 160ms,
+      box-shadow 160ms;
+  }
+
+  @media (pointer: coarse) {
+    [data-slot="button"],
+    [data-slot="sidebar-menu-button"],
+    .project-rail-tab {
+      min-height: 2.75rem;
+    }
+
+    input,
+    textarea {
+      font-size: 1rem;
+    }
+  }
+
+  /* Shared interaction rhythm, without animating page content on every visit. */
+  [data-slot="button"],
+  [data-slot="input"],
+  [data-slot="sidebar-menu-button"] {
+    transition-duration: var(--motion-standard);
+    transition-timing-function: var(--motion-ease);
+  }
+
+  [data-slot="input"] {
+    background: var(--card);
+  }
+
+  [data-slot="popover-content"],
+  [data-slot="dropdown-menu-content"] {
+    box-shadow:
+      0 12px 40px -12px rgb(12 32 18 / 22%),
+      0 2px 6px rgb(12 32 18 / 5%);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      /* biome-ignore lint/complexity/noImportantStyles: accessibility preference must override animation utilities. */
+      animation-duration: 0.01ms !important;
+      /* biome-ignore lint/complexity/noImportantStyles: accessibility preference must override animation utilities. */
+      animation-iteration-count: 1 !important;
+      /* biome-ignore lint/complexity/noImportantStyles: accessibility preference must override transition utilities. */
+      transition-duration: 0.01ms !important;
+      /* biome-ignore lint/complexity/noImportantStyles: accessibility preference must override scroll utilities. */
+      scroll-behavior: auto !important;
+    }
+  }
+
   .home-scroll {
     min-height: 0;
     flex: 1;
@@ -225,7 +338,7 @@
   }
 
   .home-panel-header h2 {
-    font-size: 0.9375rem;
+    font-size: 1.0625rem;
     font-weight: 600;
     letter-spacing: -0.012em;
   }
@@ -294,7 +407,7 @@
     overflow: hidden;
     color: var(--foreground);
     font-size: 0.875rem;
-    font-weight: 500;
+    font-weight: 600;
     line-height: 1.35;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -307,7 +420,8 @@
     font-size: 0.75rem;
     line-height: 1.35;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .home-row-arrow {
@@ -333,8 +447,8 @@
   }
 
   .home-caught-up-icon {
-    background: var(--muted);
-    color: var(--foreground);
+    background: var(--accent);
+    color: var(--accent-foreground);
   }
 
   .home-caught-up p {
@@ -431,6 +545,20 @@
     }
   }
 
+  @media (max-width: 639px) {
+    .home-shell {
+      padding: 1.5rem 1rem 2rem;
+    }
+
+    .home-intro {
+      margin-bottom: 1.5rem;
+    }
+
+    .home-row-arrow {
+      opacity: 1;
+    }
+  }
+
   .project-rail-tab {
     border: 1px solid transparent;
     border-radius: calc(var(--radius) * 0.8);
@@ -451,8 +579,8 @@
 
   .project-rail-tab[data-active="true"] {
     border-color: var(--border);
-    background: color-mix(in oklab, var(--foreground) 10%, var(--background));
-    color: var(--foreground);
+    background: var(--accent);
+    color: var(--accent-foreground);
   }
 
   .mindmap-canvas {

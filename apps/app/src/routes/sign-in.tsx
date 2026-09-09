@@ -106,7 +106,7 @@ export function SignInPage() {
 
   return (
     <main className="flex min-h-svh flex-col items-center justify-center px-6 py-12">
-      <div className="w-full max-w-[22rem]">
+      <div className="surface-panel w-full max-w-[26rem] p-6 sm:p-8">
         {/*
           No subtitle when signing in: someone returning already knows what
           this is, and the pitch belongs on the landing page. Signing up keeps
@@ -114,8 +114,8 @@ export function SignInPage() {
           costs before handing over an email.
         */}
         <div className="flex flex-col items-center text-center">
-          <Logo className="size-10" />
-          <h1 className="mt-4 text-xl font-semibold tracking-tight">
+          <Logo className="size-10 text-primary" />
+          <h1 className="page-title mt-5">
             {mode === "signIn" ? "Welcome back" : "Create your account"}
           </h1>
           {/*

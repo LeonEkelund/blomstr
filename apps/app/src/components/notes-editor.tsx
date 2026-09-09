@@ -80,7 +80,7 @@ export function NotesEditor({
       attributes: {
         // The editor is the page. Padding lives here so the caret sits where
         // the text does, and clicking the margin still focuses the document.
-        class: "outline-none min-h-full px-8 py-8 max-w-3xl mx-auto",
+        class: "outline-none min-h-full px-5 py-8 sm:px-10 sm:py-10 max-w-3xl mx-auto",
       },
     },
     onUpdate: ({ editor }) => {

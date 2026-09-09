@@ -5,6 +5,7 @@ import { Link } from "react-router-dom"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { MotionStatus } from "@/components/ui/motion"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useContent } from "@/hooks/use-content"
 import { useCurrentMember } from "@/hooks/use-members"
@@ -122,7 +123,7 @@ function TargetEditor({
   }
 
   return (
-    <section className="rounded-xl border bg-card">
+    <section className="surface-panel">
       <div className="flex items-center justify-between gap-3 border-b px-4 py-3 sm:px-5">
         <div>
           <h3 className="text-sm font-medium">{platformLabels[platform]} package</h3>
@@ -132,14 +133,13 @@ function TargetEditor({
         </div>
         <div className="flex items-center gap-2">
           {canEdit && (
-            <span
+            <MotionStatus
+              text={saveFailed ? "Could not save" : saving || dirty ? "Saving…" : "Saved"}
               className={cn(
                 "text-xs text-muted-foreground",
                 saveFailed && "text-destructive",
               )}
-            >
-              {saveFailed ? "Could not save" : saving || dirty ? "Saving…" : "Saved"}
-            </span>
+            />
           )}
           <Button
             variant="outline"
@@ -259,9 +259,7 @@ export function PublishPanel({ project }: { project: ContentItem }) {
       <header className="mb-6 flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-medium text-muted-foreground">Publish</p>
-          <h2 className="mt-1 text-xl font-semibold tracking-tight">
-            Publish this project
-          </h2>
+          <h2 className="page-title mt-1">Publish this project</h2>
           <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted-foreground">
             Choose where it goes, write the copy for each platform, and schedule when it
             should go live.
@@ -273,7 +271,7 @@ export function PublishPanel({ project }: { project: ContentItem }) {
       </header>
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <div className="min-w-0 space-y-5">
-          <section className="rounded-xl border bg-card p-4 sm:p-5">
+          <section className="surface-panel p-4 sm:p-5">
             <div className="grid gap-5 sm:grid-cols-[minmax(0,1fr)_15rem]">
               <div>
                 <h3 className="text-sm font-medium">Destinations</h3>
@@ -364,7 +362,7 @@ export function PublishPanel({ project }: { project: ContentItem }) {
           )}
         </div>
         <aside className="space-y-4 lg:sticky lg:top-20">
-          <section className="rounded-xl border bg-card p-4">
+          <section className="surface-panel p-4">
             <h3 className="text-sm font-medium">Before publishing</h3>
             <div className="mt-4 space-y-3">
               {(
@@ -399,7 +397,7 @@ export function PublishPanel({ project }: { project: ContentItem }) {
               ))}
             </div>
           </section>
-          <section className="rounded-xl border bg-card p-4">
+          <section className="surface-panel p-4">
             <h3 className="text-sm font-medium">Media to publish</h3>
             {latest ? (
               <>

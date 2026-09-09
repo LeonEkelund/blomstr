@@ -56,7 +56,7 @@ function GhostCard({
   const style = { animationDelay: delay }
 
   return (
-    <div className="rounded-lg border bg-card p-3">
+    <div className="board-card rounded-xl border bg-card p-4">
       <Skeleton className={`h-3.5 rounded-sm ${width}`} style={style} />
       {twoLine && <Skeleton className="mt-1.5 h-3.5 w-[45%] rounded-sm" style={style} />}
     </div>
@@ -87,7 +87,7 @@ export function BoardSkeleton({ columns }: { columns: BoardColumn[] }) {
                 sits in the same 20px line box — otherwise the cards below shift
                 a few pixels the moment the stages arrive.
               */}
-              <header className="flex items-center gap-2 px-1 pb-3">
+              <header className="flex min-h-11 items-center gap-2 px-1 pb-3">
                 {stage ? (
                   <>
                     <h2 className="text-sm font-medium">{stage.name}</h2>

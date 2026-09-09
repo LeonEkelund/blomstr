@@ -161,7 +161,9 @@ function ActivityRow({
   const body = (
     <>
       <Avatar className="home-activity-avatar">
-        <AvatarFallback>{initials(entry.actorName)}</AvatarFallback>
+        <AvatarFallback name={entry.actorName}>
+          {initials(entry.actorName)}
+        </AvatarFallback>
       </Avatar>
       <div className="min-w-0 flex-1">
         <p className="home-activity-copy">

@@ -73,8 +73,12 @@ export function NotificationBell() {
           </Button>
         }
       />
-      <PopoverContent align="end" sideOffset={8} className="w-88 gap-0 p-0">
-        <PopoverHeader className="flex-row items-center justify-between border-b px-4 py-3">
+      <PopoverContent
+        align="end"
+        sideOffset={8}
+        className="w-[min(24rem,calc(100vw-2rem))] gap-0 p-0"
+      >
+        <PopoverHeader className="flex-row flex-wrap items-center justify-between gap-3 border-b px-4 py-4">
           <div>
             <PopoverTitle>Notifications</PopoverTitle>
             <PopoverDescription>
@@ -133,7 +137,7 @@ export function NotificationBell() {
                   }}
                   className={cn(
                     "relative flex gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-muted",
-                    !notification.readAt && "bg-muted/60",
+                    !notification.readAt && "bg-accent/60",
                   )}
                 >
                   <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-background text-muted-foreground ring-1 ring-border">
