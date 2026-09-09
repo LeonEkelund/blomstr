@@ -86,6 +86,13 @@
     page background and the step goes the other way.
   */
   --board-canvas: #f7f8fa;
+  /*
+    One shadow color for the whole system. A neutral blue-grey rather than
+    black — pure black shadows go muddy over light grey — and deliberately not
+    tinted toward the brand green, which would pull every overlay warm against
+    neutral chrome.
+  */
+  --shadow-color: 16 24 40;
   --card-foreground: var(--foreground);
   --popover-foreground: var(--foreground);
   --primary: #49c470;
@@ -127,6 +134,8 @@
   --sidebar: #191a1e;
   --sidebar-accent: #2a2b32;
   --board-canvas: var(--background);
+  /* Pure black on a dark canvas; the light theme's blue-grey would wash out. */
+  --shadow-color: 0 0 0;
 }
 
 @layer base {
@@ -359,7 +368,7 @@
     step is the whole cue.
   */
   .board-card {
-    box-shadow: 0 1px 2px rgb(16 24 40 / 5%);
+    box-shadow: 0 1px 2px rgb(var(--shadow-color) / 5%);
     transition:
       border-color var(--motion-quick) var(--motion-ease),
       box-shadow var(--motion-quick) var(--motion-ease);
@@ -371,7 +380,7 @@
 
   @media (hover: hover) {
     .board-card:hover {
-      box-shadow: 0 2px 6px -1px rgb(16 24 40 / 8%);
+      box-shadow: 0 2px 6px -1px rgb(var(--shadow-color) / 8%);
     }
 
     .dark .board-card:hover {
@@ -415,8 +424,8 @@
   [data-slot="popover-content"],
   [data-slot="dropdown-menu-content"] {
     box-shadow:
-      0 12px 40px -12px rgb(12 32 18 / 22%),
-      0 2px 6px rgb(12 32 18 / 5%);
+      0 12px 40px -12px rgb(var(--shadow-color) / 18%),
+      0 2px 6px rgb(var(--shadow-color) / 5%);
   }
 
   @media (prefers-reduced-motion: reduce) {
