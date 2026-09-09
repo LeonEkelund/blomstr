@@ -99,7 +99,12 @@ function StagePicker({ item }: { item: ContentItem }) {
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2.5 text-xs">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5 px-2.5 text-xs"
+            aria-label={`Workflow stage: ${current?.name ?? "No stage"}`}
+          >
             {current?.name ?? "No stage"}
             <ChevronDown className="size-3.5 text-muted-foreground" />
           </Button>
@@ -546,7 +551,9 @@ function Rail({
     <aside
       className={cn(
         "min-h-0 shrink-0 flex-col",
-        mobile ? "flex min-h-0 w-full flex-1" : "hidden w-80 border-l bg-card/65 lg:flex",
+        mobile
+          ? "flex min-h-0 w-full flex-1"
+          : "hidden w-72 shrink-0 border-l bg-sidebar lg:flex",
       )}
     >
       <nav className="grid shrink-0 grid-cols-3 border-b p-2" aria-label="Project panel">
@@ -660,7 +667,7 @@ export function ProjectLayout() {
   return (
     <>
       {/* h-14 to line the rule up with the board's header and the sidebar's. */}
-      <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-card/60 px-3 sm:gap-3 sm:px-4">
+      <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-background px-3 sm:gap-3 sm:px-6">
         <SidebarTrigger className="dark:hover:bg-muted" />
         <div className="h-4 w-px shrink-0 bg-border" />
 
@@ -727,7 +734,8 @@ export function ProjectLayout() {
       <LayoutGroup id={`project-tabs-${item.id}`}>
         <motion.nav
           layoutScroll
-          className="flex shrink-0 gap-1 overflow-x-auto border-b bg-card/60 px-4 py-2"
+          aria-label="Project sections"
+          className="flex shrink-0 gap-4 overflow-x-auto border-b bg-background px-4 sm:px-6"
         >
           {tabs.map((tab) => (
             <NavLink
@@ -735,10 +743,10 @@ export function ProjectLayout() {
               to={tab.to}
               className={({ isActive }) =>
                 cn(
-                  "relative isolate shrink-0 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  "project-tab",
                   isActive
-                    ? "text-accent-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )
               }
             >

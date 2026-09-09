@@ -1,5 +1,5 @@
 import type { ContentItem } from "@blomstr/types"
-import { ArrowRight, Scissors } from "lucide-react"
+import { ArrowRight, FileText, FolderOpen, Network, Scissors } from "lucide-react"
 import { lazy, Suspense } from "react"
 import { Link, useOutletContext } from "react-router-dom"
 import { DriveFilesPanel } from "@/components/drive-files-panel"
@@ -8,7 +8,8 @@ import { PublishPanel } from "@/components/publish-panel"
 import { ReviewPanel } from "@/components/review-panel"
 import { Button } from "@/components/ui/button"
 import { useContent } from "@/hooks/use-content"
-import { approvalLabels, typeLabels } from "@/lib/content"
+import { useStages } from "@/hooks/use-stages"
+import { approvalLabels, formatDate, typeLabels } from "@/lib/content"
 
 /** Every tab receives the project from the layout's Outlet context. */
 function useProject() {
@@ -42,6 +43,8 @@ const MindmapEditor = lazy(() =>
  */
 export function OverviewTab() {
   const project = useProject()
+  const { stages } = useStages()
+  const stage = stages.find((entry) => entry.id === project.stageId)
   const next = {
     draft: {
       copy: "The work is still taking shape. Add a version when it is ready for feedback.",
@@ -66,25 +69,77 @@ export function OverviewTab() {
   }[project.approvalState]
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-4 py-10 sm:px-6 sm:py-16">
-      <p className="text-xs font-semibold uppercase tracking-widest text-accent-foreground">
-        Current status
-      </p>
-      <h2 className="mt-3 text-3xl font-semibold tracking-tight">
-        {approvalLabels[project.approvalState]}
-      </h2>
-      <p className="mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground">
-        {next.copy}
-      </p>
-      <Button
-        variant="outline"
-        size="sm"
-        className="mt-5 w-fit"
-        render={<Link to={next.to} relative="path" />}
-      >
-        {next.label}
-        <ArrowRight className="size-3.5" />
-      </Button>
+    <div className="project-shell">
+      <header className="page-intro">
+        <h2 className="page-title break-words">{project.title}</h2>
+        <p>Your project, from the first idea to the final version.</p>
+      </header>
+      <dl className="project-metadata">
+        <div>
+          <dt>Workflow stage</dt>
+          <dd>{stage?.name ?? "No stage"}</dd>
+        </div>
+        <div>
+          <dt>Review status</dt>
+          <dd>{approvalLabels[project.approvalState]}</dd>
+        </div>
+        <div>
+          <dt>Due date</dt>
+          <dd>{project.dueAt ? formatDate(project.dueAt) : "No date set"}</dd>
+        </div>
+        {project.type && (
+          <div>
+            <dt>Format</dt>
+            <dd>{typeLabels[project.type]}</dd>
+          </div>
+        )}
+      </dl>
+      <section className="flex flex-col gap-5 border-b py-8 sm:flex-row sm:items-center sm:justify-between">
+        <div className="max-w-lg">
+          <h3 className="section-title">Next step</h3>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            {next.copy}
+          </p>
+        </div>
+        <Button className="w-fit" render={<Link to={next.to} relative="path" />}>
+          {next.label}
+          <ArrowRight className="size-3.5" />
+        </Button>
+      </section>
+      <section className="pt-8">
+        <h3 className="section-title mb-3">Workspace</h3>
+        {[
+          {
+            to: "../notes",
+            label: "Notes",
+            description: "Ideas, direction and working notes.",
+            icon: FileText,
+          },
+          {
+            to: "../files",
+            label: "Files",
+            description: "Source material and project assets.",
+            icon: FolderOpen,
+          },
+          {
+            to: "../mindmap",
+            label: "Mindmap",
+            description: "Explore and connect your ideas.",
+            icon: Network,
+          },
+        ].map(({ to, label, description, icon: Icon }) => (
+          <Link key={to} to={to} relative="path" className="project-tool-row">
+            <Icon />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium">{label}</p>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                {description}
+              </p>
+            </div>
+            <ArrowRight />
+          </Link>
+        ))}
+      </section>
     </div>
   )
 }

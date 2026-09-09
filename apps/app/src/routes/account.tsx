@@ -42,10 +42,14 @@ function SettingSection({
   children: ReactNode
 }) {
   return (
-    <section className="mt-10 first:mt-0">
-      <h2 className="section-title">{title}</h2>
-      <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-      <div className="mt-4">{children}</div>
+    <section className="settings-section">
+      <div>
+        <h2 className="section-title">{title}</h2>
+        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+          {description}
+        </p>
+      </div>
+      <div className="min-w-0">{children}</div>
     </section>
   )
 }
@@ -125,13 +129,17 @@ export function AccountPage() {
     <>
       <PageHeader title="Account" />
 
-      <main className="flex-1 overflow-y-auto p-4 sm:p-6">
-        <div className="mx-auto max-w-2xl pb-8">
+      <main className="page-scroll">
+        <div className="settings-shell">
+          <header className="page-intro">
+            <h2 className="page-title">Your account</h2>
+            <p>Manage your profile and make this workspace feel like yours.</p>
+          </header>
           <SettingSection
             title="Profile"
             description="The name your teammates see across blomstr."
           >
-            <form className="surface-panel p-5 sm:p-6" onSubmit={submitProfile}>
+            <form onSubmit={submitProfile}>
               <div className="flex items-center gap-3 border-b pb-4">
                 {loadingProfile ? (
                   <Skeleton className="size-11 rounded-full" />
@@ -220,7 +228,7 @@ export function AccountPage() {
             description="Choose how blomstr looks on this device."
           >
             <div
-              className="grid grid-cols-1 gap-2 rounded-xl border bg-card p-2 sm:grid-cols-3"
+              className="grid grid-cols-1 gap-3 sm:grid-cols-3"
               role="radiogroup"
               aria-label="Appearance"
             >
@@ -232,8 +240,8 @@ export function AccountPage() {
                     className={cn(
                       "relative flex cursor-pointer items-center gap-3 rounded-lg border p-3 text-left transition-colors has-focus-visible:border-ring has-focus-visible:ring-3 has-focus-visible:ring-ring/50 sm:flex-col sm:items-start",
                       selected
-                        ? "border-border bg-background shadow-xs"
-                        : "border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                        ? "border-ring bg-accent/40"
+                        : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground",
                     )}
                   >
                     <input
@@ -263,7 +271,7 @@ export function AccountPage() {
             title="Session"
             description="Sign out of blomstr on this device."
           >
-            <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <p className="text-sm font-medium">Signed in as</p>
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">

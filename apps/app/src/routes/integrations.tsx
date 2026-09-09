@@ -31,8 +31,8 @@ export function IntegrationsPage() {
     <>
       <PageHeader title="Integrations" />
 
-      <main className="flex-1 overflow-y-auto p-4 sm:p-6">
-        <div className="mx-auto max-w-2xl">
+      <main className="page-scroll">
+        <div className="settings-shell">
           <div>
             <h2 className="page-title">Connected apps</h2>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -53,7 +53,7 @@ export function IntegrationsPage() {
 
           <section className="surface-panel mt-6 p-5 sm:p-6">
             <div className="flex items-start gap-3">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">
                 <HardDrive className="size-5 text-muted-foreground" strokeWidth={1.5} />
               </div>
 

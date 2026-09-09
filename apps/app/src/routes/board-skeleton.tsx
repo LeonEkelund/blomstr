@@ -56,7 +56,7 @@ function GhostCard({
   const style = { animationDelay: delay }
 
   return (
-    <div className="board-card rounded-xl border bg-card p-4">
+    <div className="board-card rounded-lg border bg-card p-4">
       <Skeleton className={`h-3.5 rounded-sm ${width}`} style={style} />
       {twoLine && <Skeleton className="mt-1.5 h-3.5 w-[45%] rounded-sm" style={style} />}
     </div>

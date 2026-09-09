@@ -77,7 +77,7 @@ const secondaryNav: NavItem[] = [
  * border plus `bg-clip-padding`, which stops the background painting under it.
  */
 const navButton = [
-  "h-9 border-y-2 border-transparent bg-clip-padding group-data-[collapsible=icon]:border-y-0",
+  "h-9 rounded-lg border-y-2 border-transparent bg-clip-padding text-[0.8125rem] group-data-[collapsible=icon]:border-y-0",
   // Hover is a hint, active is state — so hover sits at half strength and the
   // current page stays the most prominent row even while pointing elsewhere.
   "hover:bg-sidebar-accent/50 data-active:hover:bg-sidebar-accent",
@@ -231,14 +231,23 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
+        <SidebarGroup className="pt-4">
           <SidebarGroupContent>
-            <NavRows items={primaryNav} pathname={pathname} />
+            <NavRows
+              items={primaryNav.filter((item) => !item.soon)}
+              pathname={pathname}
+            />
+            <div className="mt-5 border-t border-sidebar-border pt-3">
+              <NavRows
+                items={primaryNav.filter((item) => item.soon)}
+                pathname={pathname}
+              />
+            </div>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="gap-3 pb-3">
         <NavRows items={secondaryNav} pathname={pathname} />
         <NavUser />
       </SidebarFooter>

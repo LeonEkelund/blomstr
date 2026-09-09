@@ -248,31 +248,30 @@ export function PublishPanel({ project }: { project: ContentItem }) {
   if (targetsLoading || versionsLoading)
     return (
       <div className="grid gap-5 p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
-        <Skeleton className="h-96 rounded-xl" />
-        <Skeleton className="h-72 rounded-xl" />
+        <Skeleton className="h-96 rounded-lg" />
+        <Skeleton className="h-72 rounded-lg" />
       </div>
     )
   const activeTarget = targets.find((target) => target.platform === activePlatform)
 
   return (
-    <div className="mx-auto w-full max-w-6xl p-4 sm:p-6">
+    <div className="project-shell">
       <header className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-medium text-muted-foreground">Publish</p>
-          <h2 className="page-title mt-1">Publish this project</h2>
+          <h2 className="page-title">Prepare publishing</h2>
           <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted-foreground">
-            Choose where it goes, write the copy for each platform, and schedule when it
-            should go live.
+            Prepare the files, copy and planned date for each destination. Publishing is
+            manual.
           </p>
         </div>
         <Badge variant={ready ? "default" : "secondary"}>
           {ready ? "Ready to publish" : "Not ready"}
         </Badge>
       </header>
-      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_18rem]">
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_16rem]">
         <div className="min-w-0 space-y-5">
           <section className="surface-panel p-4 sm:p-5">
-            <div className="grid gap-5 sm:grid-cols-[minmax(0,1fr)_15rem]">
+            <div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_15rem]">
               <div>
                 <h3 className="text-sm font-medium">Destinations</h3>
                 <p className="mt-1 text-xs text-muted-foreground">
@@ -352,7 +351,7 @@ export function PublishPanel({ project }: { project: ContentItem }) {
               )}
             </>
           ) : (
-            <div className="rounded-xl border border-dashed px-5 py-14 text-center">
+            <div className="rounded-lg border border-dashed px-5 py-14 text-center">
               <PackageCheck className="mx-auto size-5 text-muted-foreground" />
               <p className="mt-3 text-sm font-medium">Choose a destination</p>
               <p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-muted-foreground">

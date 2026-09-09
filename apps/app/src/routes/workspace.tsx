@@ -111,8 +111,12 @@ export function WorkspacePage() {
     <>
       <PageHeader title="Workspace" />
 
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-        <div className="mx-auto max-w-2xl">
+      <div className="page-scroll">
+        <div className="settings-shell">
+          <header className="page-intro">
+            <h2 className="page-title">Workspace settings</h2>
+            <p>Manage your workspace and archived projects.</p>
+          </header>
           <section>
             <h2 className="section-title">General</h2>
             <p className="mt-1 text-sm text-muted-foreground">

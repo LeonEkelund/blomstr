@@ -267,13 +267,13 @@ export function DriveFilesPanel({ project }: { project: ContentItem }) {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-      <div className="mx-auto max-w-3xl">
+    <div className="page-scroll">
+      <div className="project-shell">
         <div className="mb-4 flex items-center gap-3">
           <div>
-            <h2 className="section-title">Google Drive</h2>
+            <h2 className="page-title">Files</h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {files.length} {files.length === 1 ? "file" : "files"}
+              Google Drive · {files.length} {files.length === 1 ? "file" : "files"}
             </p>
           </div>
           {canChoose && (

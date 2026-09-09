@@ -96,8 +96,11 @@ const Card = memo(function Card({
     setRenaming(false)
   }
 
+  // Neutral hover, matching the add-project card below. Green is reserved for
+  // focus, active editing and drop feedback — hover has not earned the accent,
+  // and reusing it here made keyboard focus hard to tell from a passing cursor.
   return (
-    <article className="board-card relative rounded-xl border bg-card p-4 transition-[border-color,box-shadow] group-hover/card:border-ring/40">
+    <article className="board-card relative rounded-lg border bg-card p-4 group-hover/card:border-foreground/20">
       {renaming ? (
         <input
           // biome-ignore lint/a11y/noAutofocus: opened by an explicit rename action
@@ -412,7 +415,7 @@ function Composer({ stageId, onClose }: { stageId: string; onClose: () => void }
   }
 
   return (
-    <div className="rounded-lg border bg-card p-3 shadow-sm">
+    <div className="rounded-lg border bg-card p-3">
       <textarea
         // biome-ignore lint/a11y/noAutofocus: opened by an explicit user action
         autoFocus
@@ -535,7 +538,7 @@ function Column({
           type="button"
           onClick={onCompose}
           aria-label={`Add a project to ${column.stage.name}`}
-          className="-mr-1 ml-auto flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          className="-mr-1 ml-auto flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         >
           <Plus strokeWidth={1.5} className="size-4" />
         </button>
@@ -545,7 +548,7 @@ function Column({
         ref={ref}
         className={cn(
           // No gap: each card carries its own padding so the drop targets tile.
-          "flex min-h-24 flex-1 flex-col rounded-xl transition-colors duration-150",
+          "flex min-h-24 flex-1 flex-col rounded-lg transition-colors duration-150",
           // A soft fill rather than a dashed outline. See onDragEnter above for
           // why this is only ever a card arriving from another column.
           isOver && "bg-foreground/[0.04]",
@@ -724,7 +727,7 @@ export function BoardPage() {
 
       <div
         ref={scrollRef}
-        className="flex-1 snap-x snap-mandatory scroll-px-4 overflow-x-auto sm:snap-none sm:p-6"
+        className="board-canvas flex-1 snap-x snap-mandatory scroll-px-4 overflow-x-auto sm:snap-none sm:p-6"
       >
         <div className="flex h-full gap-3 pl-4 sm:gap-4 sm:pl-0">
           {columns.map((column) => (

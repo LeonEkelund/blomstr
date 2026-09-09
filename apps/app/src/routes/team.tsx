@@ -156,15 +156,19 @@ export function TeamPage() {
         </span>
       </PageHeader>
 
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-        <div className="mx-auto max-w-2xl">
+      <div className="page-scroll">
+        <div className="settings-shell">
+          <header className="page-intro">
+            <h2 className="page-title">Your team</h2>
+            <p>People, roles and access to your workspace.</p>
+          </header>
           <section>
             <h2 className="section-title">People</h2>
 
-            <ul className="surface-panel mt-4 divide-y">
+            <ul className="mt-4 divide-y border-y">
               {loading && <li className="p-3 text-sm text-muted-foreground">Loading…</li>}
               {members.map((m) => (
-                <li key={m.id} className="flex items-center gap-3 p-4">
+                <li key={m.id} className="flex items-center gap-3 py-5">
                   <Avatar className="size-8 shrink-0">
                     <AvatarFallback name={m.name} className="text-xs">
                       {initials(m.name)}

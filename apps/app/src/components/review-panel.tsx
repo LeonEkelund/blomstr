@@ -139,7 +139,7 @@ export function ReviewPanel({ project }: { project: ContentItem }) {
         </div>
       ) : (
         <>
-          <header className="flex shrink-0 flex-wrap items-center gap-2 border-b bg-card/65 px-3 py-3 sm:px-6">
+          <header className="flex shrink-0 flex-wrap items-center gap-2 border-b bg-background px-3 py-3 sm:px-6">
             {/*
               The version picker lives here rather than in a strip along the
               bottom: a tall image pushed that strip off screen, so switching
@@ -307,7 +307,7 @@ export function ReviewPanel({ project }: { project: ContentItem }) {
                 <img
                   src={current.url}
                   alt={`Version ${current.number}`}
-                  className="mx-auto max-h-full rounded-xl border bg-card shadow-sm"
+                  className="mx-auto max-h-full rounded-lg border bg-card"
                 />
               ) : (
                 <p className="text-sm text-muted-foreground">

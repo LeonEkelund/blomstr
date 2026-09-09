@@ -11,7 +11,7 @@ export function ActiveTabIndicator() {
       layoutId={reduced ? undefined : "active-tab"}
       initial={false}
       transition={reduced ? { duration: 0 } : motionTransitions.selection}
-      className="pointer-events-none absolute inset-0 -z-10 rounded-[inherit] bg-accent"
+      className="pointer-events-none absolute inset-x-1 bottom-0 h-0.5 rounded-full bg-primary"
     />
   )
 }

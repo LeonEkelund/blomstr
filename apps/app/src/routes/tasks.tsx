@@ -29,9 +29,9 @@ export function TasksPage() {
           </span>
         )}
       </PageHeader>
-      <main className="flex-1 overflow-y-auto p-4 md:p-6">
-        <div className="mx-auto max-w-4xl">
-          <div className="mb-7">
+      <main className="page-scroll">
+        <div className="page-shell">
+          <div className="page-intro">
             <h2 className="page-title">Your work</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Projects and deliverables assigned to you, including clips and other
@@ -46,7 +46,7 @@ export function TasksPage() {
               ))}
             </div>
           ) : assigned.length === 0 ? (
-            <div className="flex min-h-64 flex-col items-center justify-center rounded-xl border border-dashed text-center">
+            <div className="flex min-h-64 flex-col items-center justify-center rounded-lg border border-dashed text-center">
               <CircleCheck className="mb-3 size-8 text-muted-foreground/60" />
               <p className="text-sm font-medium">Nothing assigned to you</p>
               <p className="mt-1 max-w-sm text-sm text-muted-foreground">
@@ -54,7 +54,7 @@ export function TasksPage() {
               </p>
             </div>
           ) : (
-            <div className="surface-panel overflow-hidden">
+            <div className="overflow-hidden border-y">
               {assigned.map((item) => {
                 const parent = item.parentId
                   ? items.find((candidate) => candidate.id === item.parentId)
@@ -63,7 +63,7 @@ export function TasksPage() {
                   <Link
                     key={item.id}
                     to={`/projects/${item.id}/overview`}
-                    className="group flex items-center gap-4 border-b p-5 transition-colors last:border-b-0 hover:bg-accent/40"
+                    className="group flex items-center gap-4 border-b px-3 py-4 transition-colors last:border-b-0 hover:bg-muted"
                   >
                     <div className="min-w-0 flex-1">
                       {parent && (
@@ -71,9 +71,7 @@ export function TasksPage() {
                           {parent.title}
                         </p>
                       )}
-                      <p className="truncate text-[0.9375rem] font-semibold">
-                        {item.title}
-                      </p>
+                      <p className="truncate text-sm font-medium">{item.title}</p>
                       <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                         {item.type && <span>{typeLabels[item.type]}</span>}
                         <Badge variant="secondary" className="h-6 text-xs font-medium">

@@ -220,14 +220,14 @@ export function HomePage() {
         ) : (
           <div className="home-shell">
             <header className="home-intro">
-              <p className="home-date">
+              <h1>Today</h1>
+              <p className="home-date mt-2">
                 {new Date().toLocaleDateString(undefined, {
                   weekday: "long",
                   month: "long",
                   day: "numeric",
                 })}
               </p>
-              <h1>Today</h1>
               <p>A clear view of what is moving across {workspace?.name}.</p>
             </header>
 

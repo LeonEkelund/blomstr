@@ -134,8 +134,8 @@ export function CalendarPage() {
         )}
       </PageHeader>
 
-      <main className="flex-1 overflow-y-auto p-4 md:p-6">
-        <div className="mx-auto max-w-7xl">
+      <main className="page-scroll">
+        <div className="page-shell">
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <h2 className="page-title mr-auto">{format(visibleMonth, "MMMM yyyy")}</h2>
             <Button
@@ -240,7 +240,7 @@ export function CalendarPage() {
             {loading ? (
               [0, 1, 2].map((key) => <Skeleton key={key} className="h-24 w-full" />)
             ) : monthDaysWithEvents.length === 0 ? (
-              <div className="rounded-xl border border-dashed px-5 py-10 text-center text-sm text-muted-foreground">
+              <div className="rounded-lg border border-dashed px-5 py-10 text-center text-sm text-muted-foreground">
                 Nothing scheduled this month.
               </div>
             ) : (
