@@ -123,10 +123,35 @@ Green (`#49C470`) has a narrow, enforced meaning:
 
 | Use | Token |
 | --- | --- |
-| Focus | `--ring` on `:focus-visible` |
-| Active editing | ring on the rename input |
+| Focus, on controls without a caret | `--ring` on `:focus-visible` |
+| Active editing | 1px ring on an inline rename input |
 | System feedback | board drop indicator |
 | Primary action | filled primary button |
+
+### Text fields focus neutral
+
+Buttons, links, badges and cards get the green focus ring. **Text inputs and
+textareas do not** — they focus to a near-foreground border
+(`border-foreground/70`) with a faint neutral halo.
+
+This is not an inconsistency. A text field is the only focusable element that
+already indicates focus by itself: the caret, which is tinted `--ring`. A
+saturated halo on top of a blinking caret is redundant, and it fires on every
+single field click — the highest-frequency, lowest-stakes state in the app.
+Near-foreground also out-contrasts the green it replaced against both themes,
+so it is a *stronger* focus signal, not a weaker one.
+
+Inline rename inputs keep a 1px `ring-ring`, because there the ring delineates
+an edit region that has no border of its own, and signals a mode change rather
+than mere focus.
+
+### Area, not just placement
+
+Green is rationed by **how much surface it covers**, not only by where it is
+allowed. A 1px hairline and a 350px filled button are not the same amount of
+green even though both are legal above. One saturated element per screen is the
+budget — normally the primary action. Anything else green should be hairline-
+scale.
 
 It is **not** used for hover. Hover is the cheapest state in the interface and
 has not earned the accent — spending green there dilutes the four uses above,

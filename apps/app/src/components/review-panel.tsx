@@ -273,7 +273,7 @@ export function ReviewPanel({ project }: { project: ContentItem }) {
                 value={note}
                 placeholder="What needs changing?"
                 onChange={(e) => setNote(e.target.value)}
-                className="w-full resize-none rounded-lg border bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring"
+                className="w-full resize-none rounded-lg border bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-foreground/70"
               />
               <div className="mt-2 flex items-center gap-2">
                 <Button

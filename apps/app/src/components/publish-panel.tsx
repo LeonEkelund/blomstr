@@ -180,7 +180,7 @@ function TargetEditor({
             maxLength={5000}
             disabled={!canEdit}
             placeholder={`Write the ${platformLabels[platform]} copy…`}
-            className="min-h-40 w-full resize-y rounded-lg border border-input bg-transparent px-3 py-2 text-sm leading-relaxed outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="min-h-40 w-full resize-y rounded-lg border border-input bg-transparent px-3 py-2 text-sm leading-relaxed outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-foreground/70 focus-visible:ring-2 focus-visible:ring-foreground/10 disabled:cursor-not-allowed disabled:opacity-50"
           />
         </label>
         {TAG_PLATFORMS.includes(platform) && (
