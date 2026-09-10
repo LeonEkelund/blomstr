@@ -123,6 +123,17 @@ export const FLOWER = {
     breathAmount: 0.012,
     driftSpeed: 0.11,
     driftAmount: 0.055,
+    /*
+      Scroll-driven rotation, kept separate from `progress`.
+
+      progress is the bloom opening and is pinned to the workflow track, so it
+      finishes and then holds. This turns the whole flower for as long as the
+      page keeps scrolling, which is what makes it feel like an object you are
+      moving past rather than a graphic that animates once.
+    */
+    spinDamping: 0.05,
+    /** Turns of the bloom per viewport height scrolled past the hero. */
+    spinTurnsPerViewport: 0.32,
   },
 
   performance: {

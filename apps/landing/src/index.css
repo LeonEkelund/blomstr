@@ -87,13 +87,18 @@
   /* ---- Landing additions ---- */
 
   /*
-    The deep section. Not a new brand colour: --deep is the product's own
-    --primary-foreground, the darkest green already in the palette.
+    The deep section — the page's one dark moment.
+
+    Neutral rather than green. Green is rationed by area, and a full-bleed
+    green panel is the largest possible spend of it; it also left the primary
+    button sitting green-on-green with nothing to distinguish it. Neutral here
+    means the button is the only saturated thing on the screen, which is the
+    point of a closing call to action.
   */
-  --deep: #102c19;
-  --deep-foreground: #eaf6ee;
-  --deep-muted: #9dbfa9;
-  --deep-border: #23492f;
+  --deep: #17181c;
+  --deep-foreground: #edeef0;
+  --deep-muted: #a0a2ae;
+  --deep-border: #2d2e35;
 
   /*
     Glass. Reserved for navigation and a few floating surfaces — not the
@@ -161,14 +166,14 @@
   /* ---- Landing additions ---- */
 
   /*
-    On a dark page the deep-green section can no longer be the dark moment, so
-    it inverts its job: it becomes the one section that is *greener* than its
-    surroundings rather than darker than them.
+    On a dark page the deep section can no longer be the dark moment, so it
+    inverts its job: it becomes the one section *lifted above* its
+    surroundings rather than sunk below them.
   */
-  --deep: #16301f;
-  --deep-foreground: #e8f3ec;
-  --deep-muted: #9dbfa9;
-  --deep-border: #2b4a36;
+  --deep: #212328;
+  --deep-foreground: #edeef0;
+  --deep-muted: #a0a2ae;
+  --deep-border: #34363d;
 
   --glass-bg: rgb(28 29 33 / 68%);
   --glass-bg-opaque: rgb(28 29 33 / 94%);
@@ -349,12 +354,21 @@
     background: var(--deep);
     color: var(--deep-foreground);
   }
+  /*
+    A field of marks rather than a texture. Neutral foreground rather than
+    --deep-muted: at 6px the petals need contrast to stay legible as a shape,
+    and a mid grey at low opacity just goes muddy.
+
+    Masked out of the middle so the grid never sits behind the headline — the
+    pattern is there to fill the margins, not to be read through.
+  */
   .closing-cta-pattern {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    color: var(--deep-muted);
-    opacity: 0.16;
+    color: var(--deep-foreground);
+    opacity: 0.14;
+    mask-image: radial-gradient(ellipse 62% 58% at 50% 50%, transparent 35%, #000 100%);
   }
   .product-preview {
     display: flex;

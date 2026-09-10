@@ -36,10 +36,18 @@ export function FlowerCanvas() {
       const opacity = mobile
         ? clamp(hero.bottom / (innerHeight * 0.6))
         : clamp(end.bottom / innerHeight)
+      /*
+        Viewport heights scrolled past the top of the hero. Unlike `progress`,
+        which is pinned to the workflow track and completes, this keeps rising
+        for the whole page — so the bloom is still turning long after it has
+        finished opening.
+      */
+      const spin = Math.max(0, -hero.top) / Math.max(innerHeight, 1)
+
       host.style.opacity = String(opacity)
       host.style.setProperty("--flower-x", `${50 + anchorX * 22}%`)
       host.style.setProperty("--flower-y", `${50 - anchorY * 28}%`)
-      scene?.setTargets({ progress, anchorX, anchorY })
+      scene?.setTargets({ progress, anchorX, anchorY, spin })
       if (opacity === 0) scene?.stop()
       else if (visible && !document.hidden && !reduced.matches) scene?.start()
     }

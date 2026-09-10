@@ -34,6 +34,11 @@ export type FlowerTargets = {
   /** Pointer position in -1..1, already normalised to the viewport. */
   pointerX: number
   pointerY: number
+  /**
+   * Viewport heights scrolled past the hero. Unbounded and always increasing
+   * as the page goes down; the scene decides how much rotation that buys.
+   */
+  spin: number
 }
 
 const DEG = MathUtils.degToRad
@@ -115,6 +120,7 @@ export class FlowerScene {
     anchorY: 0,
     pointerX: 0,
     pointerY: 0,
+    spin: 0,
   }
   private readonly current: FlowerTargets = { ...this.targets }
 
@@ -494,9 +500,18 @@ export class FlowerScene {
         Math.cos(this.elapsed * motion.driftSpeed * 0.41) *
         motion.driftAmount
 
+    /*
+      Rotation is scroll first, then the idle drift, then the pointer. Reduced
+      motion drops the spin entirely — it is the one part of the pose that is
+      rotation for its own sake, so it is the part that has to go.
+    */
+    const spin = this.reducedMotion
+      ? 0
+      : this.current.spin * motion.spinTurnsPerViewport * Math.PI * 2
+
     // Pointer nudges the pose; it never replaces it. The scroll stage stays
     // in charge of where the petals are.
-    this.bloom.rotation.y = drift + this.current.pointerX * motion.pointerRange
+    this.bloom.rotation.y = spin + drift + this.current.pointerX * motion.pointerRange
     this.bloom.rotation.x = this.current.pointerY * motion.pointerRange * 0.5
   }
 
@@ -518,6 +533,7 @@ export class FlowerScene {
       c.progress = damp(c.progress, t.progress, motion.progressDamping, dt)
       c.pointerX = damp(c.pointerX, t.pointerX, motion.pointerDamping, dt)
       c.pointerY = damp(c.pointerY, t.pointerY, motion.pointerDamping, dt)
+      c.spin = damp(c.spin, t.spin, motion.spinDamping, dt)
     }
     c.anchorX = damp(c.anchorX, t.anchorX, motion.anchorDamping, dt)
     c.anchorY = damp(c.anchorY, t.anchorY, motion.anchorDamping, dt)

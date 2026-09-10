@@ -1,0 +1,16 @@
+{
+  "status": "PASS",
+  "petals": 10,
+  "outer_names": [
+    "Petal_01",
+    "Petal_02",
+    "Petal_03",
+    "Petal_04",
+    "Petal_05"
+  ],
+  "triangles": 102080,
+  "default_pose": "folded",
+  "animations": 0,
+  "morphs": "Bloom_Closed on all ten; Spread_Out on outer five",
+  "glb_bytes": 4218404
+}

@@ -1,0 +1,26 @@
+{
+  "status": "PASS",
+  "petals": 10,
+  "outer_controls": [
+    "Petal_01",
+    "Petal_02",
+    "Petal_03",
+    "Petal_04",
+    "Petal_05"
+  ],
+  "default_pose": "fully folded",
+  "animation": "outer 01 through 05 in order, inner partners follow",
+  "clips": [
+    "Unfold_Inner_Petal_01",
+    "Unfold_Inner_Petal_02",
+    "Unfold_Inner_Petal_03",
+    "Unfold_Inner_Petal_04",
+    "Unfold_Inner_Petal_05",
+    "Unfold_Petal_01",
+    "Unfold_Petal_02",
+    "Unfold_Petal_03",
+    "Unfold_Petal_04",
+    "Unfold_Petal_05"
+  ],
+  "glb_bytes": 3703156
+}

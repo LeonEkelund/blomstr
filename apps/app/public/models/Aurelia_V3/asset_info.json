@@ -1,0 +1,22 @@
+{
+  "outer_petals": [
+    "Petal_01",
+    "Petal_02",
+    "Petal_03",
+    "Petal_04",
+    "Petal_05"
+  ],
+  "inner_petals": [
+    "Inner_Petal_01",
+    "Inner_Petal_02",
+    "Inner_Petal_03",
+    "Inner_Petal_04",
+    "Inner_Petal_05"
+  ],
+  "triangles": 87808,
+  "morphs": {
+    "Spread_Out": "0=normal, 1=spread",
+    "Bloom_Closed": "0=normal, 1=folded"
+  },
+  "blender_version": "5.0.0"
+}
