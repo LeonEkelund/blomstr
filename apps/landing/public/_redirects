@@ -1,0 +1,6 @@
+# The landing page is a single client-rendered document. Any path this site
+# serves should still return it rather than a host 404, so deep links and the
+# /sign-in hand-off behave predictably once the two apps share a domain.
+#
+# 200, not 301: serve that file *as* the requested URL rather than redirecting.
+/*  /index.html  200

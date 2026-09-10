@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Blomstr — from rough idea to ready to publish</title>
+    <meta
+      name="description"
+      content="Plan, create, review and prepare every piece of content with your whole team in one place."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Blomstr — from rough idea to ready to publish" />
+    <meta
+      property="og:description"
+      content="Plan, create, review and prepare every piece of content with your whole team in one place."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script>
+      try {
+        let saved = null
+        try { saved = localStorage.getItem("blomstr-landing-theme") } catch {}
+        const dark = saved === "dark" || (saved !== "light" && matchMedia("(prefers-color-scheme: dark)").matches)
+        document.documentElement.classList.toggle("dark", dark)
+        document.documentElement.style.colorScheme = dark ? "dark" : "light"
+      } catch {
+        // No matchMedia — the class stays off and the page renders light.
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

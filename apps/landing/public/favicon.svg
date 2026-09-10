@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-32 -32 320 320" width="320" height="320">
+  <g fill="#FFFFFF">
+    <path d="M0 0H84A36 36 0 0 1 120 36V88H104V104H88V120H36A36 36 0 0 1 0 84Z"></path>
+    <path d="M0 0H84A36 36 0 0 1 120 36V88H104V104H88V120H36A36 36 0 0 1 0 84Z" transform="rotate(90 128 128)"></path>
+    <path d="M0 0H84A36 36 0 0 1 120 36V88H104V104H88V120H36A36 36 0 0 1 0 84Z" transform="rotate(180 128 128)"></path>
+    <path d="M0 0H84A36 36 0 0 1 120 36V88H104V104H88V120H36A36 36 0 0 1 0 84Z" transform="rotate(270 128 128)"></path>
+  </g>
+</svg>

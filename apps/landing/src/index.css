@@ -1,0 +1,541 @@
+@import "tailwindcss";
+@import "@fontsource-variable/geist";
+@import "@fontsource/instrument-serif";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+  The landing page is a separate Vite app from apps/app, so these tokens are a
+  deliberate copy of the product palette rather than an import. Two rules keep
+  the two surfaces feeling like one product:
+
+    1. Colour values below are copied verbatim from apps/app/src/index.css.
+       If the product palette moves, move it here too.
+    2. Everything the landing page adds on top — glass, elevation, cinematic
+       motion, the deep section — is derived from those values, never invented
+       alongside them.
+
+  The landing page earns its stronger personality through light, depth and
+  motion. It does not get its own brand colours.
+*/
+
+@theme inline {
+  --font-sans: "Geist Variable", sans-serif;
+  --font-heading: var(--font-sans);
+  --font-display: "Instrument Serif", ui-serif, Georgia, serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* The one cinematic dark surface, used by a section or two for contrast. */
+  --color-deep: var(--deep);
+  --color-deep-foreground: var(--deep-foreground);
+  --color-deep-muted: var(--deep-muted);
+  --color-deep-border: var(--deep-border);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  color-scheme: light;
+
+  /* ---- Copied from the product palette ---- */
+  --background: #ffffff;
+  --foreground: #222326;
+  --card: #ffffff;
+  --popover: #ffffff;
+  --secondary: #f0f1f3;
+  --secondary-foreground: #42454d;
+  --muted: #f5f5f7;
+  --muted-foreground: #666a73;
+  --accent: #eaf6ee;
+  --accent-foreground: #216438;
+  --destructive: #b83434;
+  --border: #e7e8ec;
+  --input: #c9cbd2;
+  --ring: #248744;
+  --radius: 0.75rem;
+  --primary: #49c470;
+  --primary-foreground: #102c19;
+  --card-foreground: var(--foreground);
+  --popover-foreground: var(--foreground);
+  /* Neutral blue-grey, not black: black shadows go muddy over light grey. */
+  --shadow-color: 16 24 40;
+
+  /* ---- Landing additions ---- */
+
+  /*
+    The deep section. Not a new brand colour: --deep is the product's own
+    --primary-foreground, the darkest green already in the palette.
+  */
+  --deep: #102c19;
+  --deep-foreground: #eaf6ee;
+  --deep-muted: #9dbfa9;
+  --deep-border: #23492f;
+
+  /*
+    Glass. Reserved for navigation and a few floating surfaces — not the
+    background of every card. The highlight is the thin lit top edge that
+    makes a translucent panel read as a physical sheet rather than a tint.
+  */
+  --glass-bg: rgb(255 255 255 / 72%);
+  --glass-bg-opaque: rgb(255 255 255 / 94%);
+  --glass-border: rgb(16 24 40 / 8%);
+  --glass-highlight: rgb(255 255 255 / 70%);
+  --glass-blur: 20px;
+  --glass-saturate: 140%;
+
+  /*
+    Three levels of elevation, matching the three levels of depth in the
+    brief: tonal content, lifted product surfaces, floating controls. Each
+    step gets broader and softer rather than merely darker.
+  */
+  --elevation-1: 0 1px 2px rgb(var(--shadow-color) / 5%);
+  --elevation-2:
+    0 2px 6px -1px rgb(var(--shadow-color) / 8%),
+    0 12px 32px -12px rgb(var(--shadow-color) / 14%);
+  --elevation-3:
+    0 2px 6px rgb(var(--shadow-color) / 5%),
+    0 12px 40px -12px rgb(var(--shadow-color) / 18%),
+    0 32px 64px -24px rgb(var(--shadow-color) / 16%);
+
+  /* Product interactions stay quick; page-scale moments get room to breathe. */
+  --motion-quick: 150ms;
+  --motion-standard: 180ms;
+  --motion-panel: 200ms;
+  --motion-cinematic: 720ms;
+  --motion-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --motion-ease-cinematic: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --shell-max: 76rem;
+  --section-panel-radius: clamp(1.25rem, 3vw, 2.5rem);
+  --section-panel-gutter: clamp(1rem, 4vw, 4rem);
+  --section-panel-gap: clamp(1.5rem, 4vw, 4rem);
+  --preview-sidebar: #f8f9fb;
+}
+
+.dark {
+  color-scheme: dark;
+  --preview-sidebar: #191a1e;
+
+  /* ---- Copied from the product palette ---- */
+  --background: #151619;
+  --foreground: #edeef0;
+  --card: #1c1d21;
+  --popover: #25262c;
+  --secondary: #2a2b31;
+  --secondary-foreground: #e0e1e6;
+  --muted: #222329;
+  --muted-foreground: #a0a2ae;
+  --accent: #20382a;
+  --accent-foreground: #86dca2;
+  --destructive: #ff9393;
+  --border: #2d2e35;
+  --input: #494b55;
+  --ring: #49c470;
+  /* Pure black on a dark canvas; the light theme's blue-grey would wash out. */
+  --shadow-color: 0 0 0;
+
+  /* ---- Landing additions ---- */
+
+  /*
+    On a dark page the deep-green section can no longer be the dark moment, so
+    it inverts its job: it becomes the one section that is *greener* than its
+    surroundings rather than darker than them.
+  */
+  --deep: #16301f;
+  --deep-foreground: #e8f3ec;
+  --deep-muted: #9dbfa9;
+  --deep-border: #2b4a36;
+
+  --glass-bg: rgb(28 29 33 / 68%);
+  --glass-bg-opaque: rgb(28 29 33 / 94%);
+  --glass-border: rgb(255 255 255 / 9%);
+  --glass-highlight: rgb(255 255 255 / 10%);
+
+  /* Shadow on a dark canvas reads as smudge, so depth leans on the hairline. */
+  --elevation-1: 0 1px 2px rgb(0 0 0 / 30%);
+  --elevation-2: 0 2px 6px -1px rgb(0 0 0 / 40%), 0 12px 32px -12px rgb(0 0 0 / 50%);
+  --elevation-3:
+    0 2px 6px rgb(0 0 0 / 40%), 0 12px 40px -12px rgb(0 0 0 / 55%),
+    0 32px 64px -24px rgb(0 0 0 / 50%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "cv11", "ss01";
+    /*
+      The flower canvas is fixed to the viewport. Without this, any single
+      element wider than the viewport would scroll the whole page sideways.
+    */
+    overflow-x: clip;
+  }
+
+  html {
+    @apply font-sans;
+    scroll-behavior: smooth;
+    scrollbar-color: var(--input) transparent;
+    scrollbar-width: thin;
+  }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+
+  ::selection {
+    background: var(--accent);
+    color: var(--accent-foreground);
+  }
+
+  :where(a, button):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+@layer components {
+  .shell {
+    width: 100%;
+    max-width: var(--shell-max);
+    margin-inline: auto;
+    padding-inline: clamp(1.25rem, 5vw, 3rem);
+  }
+
+  /*
+    Display type. Instrument Serif is an accent for marketing headlines only —
+    never controls, paragraphs or anything inside a product vignette. It sits
+    optically larger than Geist at the same size, so it takes a tighter
+    leading and a touch of negative tracking to sit calmly.
+  */
+  .display {
+    font-family: var(--font-display);
+    font-weight: 400;
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  .display-em {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  .eyebrow {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    color: var(--muted-foreground);
+  }
+
+  /*
+    Glass. The inset highlight along the top edge is what sells it as a sheet
+    of material; without it a blurred panel just looks like a weak tint.
+  */
+  .glass {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow:
+      var(--elevation-2),
+      inset 0 1px 0 var(--glass-highlight);
+  }
+
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .glass {
+      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+      backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    }
+  }
+
+  /* Where blur is unavailable the panel simply becomes more opaque. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass {
+      background: var(--glass-bg-opaque);
+    }
+  }
+
+  /*
+    Product surfaces. Level two of the depth hierarchy: lifted off the page,
+    but not glass — a vignette needs an opaque background so the app UI inside
+    it reads at full contrast.
+  */
+  .surface {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--elevation-2);
+  }
+
+  .surface-raised {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--elevation-3);
+  }
+
+  /*
+    Fades a decorative layer out before it reaches its own bounding box, so
+    patterns and tonal pools emerge from the page instead of ending on a hard
+    rectangle edge.
+  */
+  .edge-fade {
+    -webkit-mask-image: radial-gradient(
+      ellipse 68% 62% at 50% 50%,
+      #000 40%,
+      transparent 100%
+    );
+    mask-image: radial-gradient(ellipse 68% 62% at 50% 50%, #000 40%, transparent 100%);
+  }
+
+  /*
+    The tonal pool behind the hero. A single soft green wash rather than a
+    gradient across the whole page — the brief is explicit that green should
+    stay deliberate.
+  */
+  .tonal-pool {
+    /*
+      Weighted toward the copy rather than centred on the bloom. The pool
+      renders below the flower canvas, and a green wash sitting directly
+      behind a green translucent object flattens the very silhouette the
+      lighting rig exists to produce.
+    */
+    background: radial-gradient(
+      ellipse 46% 44% at 22% 38%,
+      color-mix(in srgb, var(--primary) 11%, transparent),
+      transparent 70%
+    );
+  }
+}
+
+@layer components {
+  .closing-cta {
+    background: var(--deep);
+    color: var(--deep-foreground);
+  }
+  .closing-cta-pattern {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    color: var(--deep-muted);
+    opacity: 0.16;
+  }
+  .product-preview {
+    display: flex;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--background);
+    box-shadow: var(--elevation-3);
+  }
+  .preview-sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 180px;
+    flex-shrink: 0;
+    padding: 0 10px;
+    background: var(--preview-sidebar);
+    border-right: 1px solid var(--border);
+  }
+  .preview-nav-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    font-size: 13px;
+    color: var(--muted-foreground);
+    border-radius: 8px;
+  }
+  .preview-nav-row.is-active {
+    background: var(--secondary);
+    color: var(--foreground);
+  }
+  .preview-tabs {
+    display: flex;
+    gap: 22px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+  }
+  .preview-tabs > * {
+    flex-shrink: 0;
+    padding: 17px 0;
+    font-size: 12px;
+    color: var(--muted-foreground);
+  }
+  .preview-tabs button {
+    cursor: pointer;
+  }
+  .preview-tabs .is-active {
+    box-shadow: inset 0 -2px var(--foreground);
+    color: var(--foreground);
+  }
+  .preview-overview {
+    min-height: 492px;
+    padding: 32px 36px;
+  }
+  .preview-metadata {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px 36px;
+    padding: 24px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .preview-metadata dt {
+    color: var(--muted-foreground);
+    margin-bottom: 7px;
+  }
+  .preview-metadata dd {
+    font-weight: 500;
+  }
+  .preview-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .preview-review {
+    min-height: 492px;
+  }
+  .preview-review-body {
+    display: grid;
+    grid-template-columns: 1fr 260px;
+  }
+  .preview-thread {
+    padding: 20px;
+    border-left: 1px solid var(--border);
+  }
+  .campaign-art {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 340px;
+    padding: 25px;
+    background: var(--accent);
+    color: var(--accent-foreground);
+  }
+  .campaign-art > span {
+    font-size: 10px;
+  }
+  .campaign-art > p {
+    font-family: var(--font-display);
+    font-size: clamp(40px, 5vw, 72px);
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+  }
+  @media (max-width: 900px) {
+    .preview-sidebar {
+      width: 145px;
+    }
+    .preview-review-body {
+      grid-template-columns: 1fr;
+    }
+    .preview-thread {
+      border-left: 0;
+      border-top: 1px solid var(--border);
+    }
+  }
+  @media (max-width: 639px) {
+    .preview-sidebar {
+      display: none;
+    }
+    .preview-overview {
+      padding: 24px 18px;
+    }
+    .preview-tabs {
+      padding-inline: 18px;
+      gap: 18px;
+    }
+    .preview-metadata {
+      gap: 18px;
+    }
+  }
+}
+
+@layer components {
+  section[id] {
+    scroll-margin-top: 90px;
+  }
+  .glass-section {
+    width: calc(100% - var(--section-panel-gutter) * 2);
+    max-width: calc(var(--shell-max) + 6rem);
+    margin-inline: auto;
+    margin-block: var(--section-panel-gap);
+    overflow: clip;
+    border: 1px solid var(--glass-border);
+    border-radius: var(--section-panel-radius);
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    box-shadow:
+      var(--elevation-2),
+      inset 0 1px 0 var(--glass-highlight);
+  }
+  .flower-still {
+    position: absolute;
+    left: var(--flower-x, 72%);
+    top: var(--flower-y, 50%);
+    transform: translate(-50%, -50%);
+    width: 52vw;
+    height: 80svh;
+    object-fit: contain;
+  }
+  @media (max-width: 767px) {
+    .flower-still {
+      width: 85vw;
+      height: 40svh;
+    }
+    .glass-section {
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+    }
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass-section {
+      background: var(--glass-bg-opaque);
+    }
+  }
+}
