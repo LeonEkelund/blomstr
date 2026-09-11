@@ -8,10 +8,13 @@ This revision rebuilds the petal geometry. Broad, quiet curves replace the point
 - `aurelia_flower.glb`: the model only, with materials and morph targets; loads fully folded.
 - `aurelia_hero.png`: the open model, rendered in Cycles.
 - `aurelia_closed.png`: the folded model.
+- `aurelia-fallback.webp`: transparent Three.js render used during loading or when WebGL is unavailable.
 - `build_flower.py`: standalone rebuild script for Blender.
 - `validation.json`: mesh and export checks.
 
 ## Existing Three.js motion
+
+The landing page serves this model at `/models/Aurelia_V4/aurelia_flower.glb`.
 
 The five outer meshes remain `Petal_01`, `Petal_02`, `Petal_03`, `Petal_04`, `Petal_05`. Their origins are at the attachment points. There are five additional meshes named `Inner_Petal_01` through `Inner_Petal_05`, a small `Flower_Center`, and the parent `Flower_Root`.
 
@@ -25,6 +28,6 @@ Each named petal exports as a single mesh primitive. The edge tint uses vertex c
 
 Faces use moderately rough transmissive glass with a small metallic component. Polished edges use stronger transmission and a blue tint. The surfaces have real rounded thickness. Alpha remains opaque; the transparency effect comes from physical transmission.
 
-Use the imported PBR materials and a good environment map in Three.js. Blender's studio lights and floor are excluded from the GLB. Rendering appearance depends on the environment and renderer. This asset has been structurally checked and rendered in Blender, not tested inside your Three.js application.
+Use the imported PBR materials and a good environment map in Three.js. Blender's studio lights and floor are excluded from the GLB. Rendering appearance depends on the environment and renderer. The landing page imports the GLB through `src/flower/aurelia-model.ts`. Its five outer `Bloom_Closed` morphs unfold in order with scroll progress. The runtime caps the outer folded morph at 0.8 because the fully folded source mesh intersects its neighbors. Each moving outer petal travels outward by up to 0.35 model units and returns to its original position at full opening. Inner petals wait for both adjacent outer petals to clear; scrolling upward reverses the same path. The original fully open geometry and materials are unchanged. `Spread_Out` stays at zero. Reduced motion displays the completed bloom. Original materials, vertex colors, and embedded roughness maps are preserved.
 
 This is a detailed hero asset; the exact triangle count and file size are listed in `validation.json`.

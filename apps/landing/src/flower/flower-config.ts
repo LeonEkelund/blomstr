@@ -1,107 +1,164 @@
-/*
-  Every artistic value for the bloom lives here.
-
-  The point of a single config object is that visual tuning never requires
-  reading the scene graph or the pose maths. If the flower looks wrong, it is
-  almost always one of these numbers — not the code that consumes them.
-
-  Colours are the product palette's greens, hard-coded rather than read from
-  CSS because WebGL needs them in linear space at scene construction time and
-  the flower must look identical in both themes. The page background changes
-  between light and dark; the object lit inside the scene does not.
-*/
-
+/** Aurelia V4 presentation and scroll choreography. Materials come from the GLB. */
 export const FLOWER = {
-  geometry: {
-    /** Subdivisions along the petal's length and across its width. */
-    segmentsU: 48,
-    segmentsV: 24,
-    length: 1.0,
-    halfWidth: 0.42,
-    /** Thickness at the thickest point. Edges and tip thin out from here. */
-    thickness: 0.055,
-    /** How strongly the surface cups toward the flower's axis. */
-    cup: 0.65,
-    /** Depth of the shallow ridge running base to tip. */
-    ridge: 0.025,
-    /** How far the tip curls away from the centre. */
-    curl: 0.12,
-    /** Pulls the outer edges back along the length, rounding the silhouette. */
-    edgePull: 0.04,
-    /** Gentle spiral along the petal's length, in radians at the tip. */
-    twist: 0.035,
+  model: {
+    url: "/models/Aurelia_V4/aurelia_flower.glb",
+    radius: 1.05,
+    baseY: -0.06,
   },
+  /*
+    The glass finish.
 
-  inner: {
-    count: 3,
-    scale: 0.56,
-    /** Inner forms stay tucked; they reveal the centre rather than opening. */
-    openDegrees: 38,
+    These sit close to the values the GLB was actually authored with. The
+    previous set muted every one of them — roughness up, clearcoat down,
+    transmission down, the embedded roughness map discarded — which turned an
+    asset built as optical glass into flat plastic.
+  */
+  finish: {
+    outer: "#42875e",
+    // Lifted off near-black: the old #236541 / #20553c read as holes punched
+    // in the middle of the open bloom rather than as petals in shadow.
+    inner: "#2f7a52",
+    heart: "#79ab78",
+    edge: "#2d8859",
+    core: "#2c6b4a",
+    roughness: 0.42,
+    transmission: 0.82,
+    // Enough sheen to read as glass without the hard white hotspot a near-
+    // polished clearcoat puts across the folded bud.
+    clearcoat: 0.34,
+    clearcoatRoughness: 0.22,
+    ior: 1.46,
+    /*
+      Transmission on its own is a thin-surface effect: light passes straight
+      through and picks up nothing. Thickness gives the petal a body to travel
+      through and the attenuation colour is what it collects on the way. The
+      GLB declares KHR_materials_transmission but no KHR_materials_volume, so
+      without these two there is nothing making the glass read as glass.
+    */
+    thickness: 0.32,
+    attenuationColor: "#2e8f63",
+    /*
+      Absorption is deliberately gentle. Tuned darker it reads as carved jade,
+      which is handsome on its own but drops the bloom several steps in value
+      against a white page and loses the silhouette entirely on a dark one.
+    */
+    attenuationDistance: 1.7,
   },
-
-  centre: {
-    radius: 0.15,
-    /** Flattened rather than spherical — a receptacle, not a ball. */
-    flatten: 0.66,
-    /** Amplitude of the vertex noise that keeps it from reading as a sphere. */
-    irregularity: 0.055,
+  heart: {
+    scale: 0.5,
+    radiusScale: 0.65,
+    height: 0.62,
+    rotation: Math.PI / 5,
+    openStart: 0.94,
+    stagger: 0.005,
   },
-
   pose: {
-    /** Petal tilt in the dormant bud. Near-vertical, folded over the centre. */
-    closedDegrees: 28,
-    /** Petal tilt in the completed bloom. */
-    openDegrees: 62,
-    /**
-     * One entry per petal, in workflow order: Plan, Create, Review, Approve,
-     * Publish.
-     *
-     * `open` is where that petal's movement begins and ends within the 0..1
-     * story; the windows overlap so the bloom never looks like five separate
-     * events. Everything else is that petal's small deviation from the ideal
-     * — visible subconsciously, never obviously random.
-     */
     petals: [
-      { open: [0.02, 0.3], tilt: 0, scale: 1.0, lean: 0.0, spin: 0.0 },
-      { open: [0.16, 0.46], tilt: -3.5, scale: 0.965, lean: 0.035, spin: 0.05 },
-      { open: [0.32, 0.62], tilt: 2.5, scale: 1.03, lean: -0.03, spin: -0.04 },
-      { open: [0.48, 0.78], tilt: -1.5, scale: 0.985, lean: 0.02, spin: 0.03 },
-      { open: [0.64, 0.96], tilt: 3.0, scale: 1.01, lean: -0.025, spin: -0.02 },
+      { name: "Petal_01", inner: "Inner_Petal_01", open: [0, 0.2] },
+      { name: "Petal_02", inner: "Inner_Petal_02", open: [0.2, 0.4] },
+      { name: "Petal_03", inner: "Inner_Petal_03", open: [0.4, 0.6] },
+      { name: "Petal_04", inner: "Inner_Petal_04", open: [0.6, 0.8] },
+      { name: "Petal_05", inner: "Inner_Petal_05", open: [0.8, 1] },
     ],
-  },
+    /*
+      How far the outer shell is allowed to fold. The asset self-intersects
+      when fully folded face-on, which is what the old 0.8 cap was working
+      around — at the cost of a bud that never actually closed.
+    */
+    foldLimit: 1,
+    /*
+      Petals turn about the flower's axis as they fold, so the five wrap into
+      a spiral the way a real bud does instead of meeting face-on. This is
+      what buys back the last of the fold above.
+    */
+    foldTwist: 0.5,
+    /*
+      Temporary outward travel in model units; zero at either end pose.
 
-  material: {
-    /** Petal body: the product's primary botanical green. */
-    petalColor: "#309e56",
-    /** Overlaps and deep folds accumulate toward this. */
-    attenuationColor: "#a9e0bb",
-    attenuationDistance: 0.85,
-    roughness: 0.36,
-    transmission: 0.38,
-    thickness: 0.45,
-    ior: 1.37,
-    clearcoat: 0.24,
-    clearcoatRoughness: 0.25,
-    iridescence: 0.08,
-    /** Centre: the palette's deepest green, satin rather than translucent. */
-    centreColor: "#123a20",
-    centreRoughness: 0.5,
-    /** Just enough to stop the centre reading as a dead black hole. */
-    centreEmissive: "#1d5c33",
-    centreEmissiveIntensity: 0.16,
+      Weighted hard toward the folded end, where petals actually collide. An
+      even bump peaked at half-open, which is precisely where the petals are
+      most visible as separate objects — it read as the bloom coming apart.
+      The fold twist does most of the clearing now, so this can stay small.
+    */
+    openingClearance: 0.1,
   },
-
   lighting: {
-    key: { color: "#fff6ea", intensity: 4.2, position: [-2.4, 3.4, 2.6] },
+    key: { color: "#ffffff", intensity: 2.2, position: [-2.4, 3.4, 2.6] },
     /** Traces the outer petal edges and separates the bloom from the page. */
-    rim: { color: "#8fe3ab", intensity: 3.6, position: [2.8, 1.4, -2.9] },
+    rim: { color: "#eaf6ee", intensity: 2.4, position: [2.8, 1.4, -2.9] },
     fill: { color: "#ffffff", intensity: 0.55, position: [0.6, -1.2, 2.4] },
     /** Catches the inner ring without reading as a stage spotlight. */
     top: { color: "#eafff1", intensity: 0.7, position: [0.2, 3.2, -0.4] },
     /** The rim strengthens slightly as the bloom completes. */
     rimBoostAtFullBloom: 0.55,
-    environmentIntensity: 0.55,
+    environmentIntensity: 0.85,
     exposure: 1.06,
+  },
+
+  /*
+    The haze the bloom sits in: light shafts, a soft halo and drifting motes.
+
+    Two palettes, because this canvas composites over both a white and a
+    near-black page. Additive light is the usual way to build a glow, and it
+    is invisible on white — you cannot add light to a white pixel. So every
+    layer here is an ordinary alpha-blended wash and only the tint changes
+    between themes.
+
+    The halo is deliberately near-neutral rather than green. A green wash
+    directly behind a green translucent flower flattens the silhouette the
+    whole lighting rig exists to produce, which is the same reason the CSS
+    tonal pool is offset away from the bloom. Saturation lives in the shafts
+    and the motes, which sit off-axis.
+  */
+  atmosphere: {
+    /*
+      How fast the haze animates under its own power, independent of scroll:
+      the motes' rise, sway and twinkle, the shafts' shimmer, the halo's
+      breath. 0 stills the background completely and leaves the flower the
+      only thing moving on the page; 1 is a full, drifting field.
+    */
+    motion: 0,
+    dark: {
+      shaft: "#a9e0bb",
+      halo: "#dcf6e7",
+      mote: "#cdf3dd",
+      strength: 1,
+    },
+    light: {
+      shaft: "#8cccaa",
+      halo: "#a9cdba",
+      mote: "#86c5a2",
+      strength: 0.42,
+    },
+    /*
+      The fake lens bloom behind the flower.
+
+      `follow` is how much of the flower's travel across the page the halo
+      copies: 0 leaves it fixed in frame, 1 locks it to the bloom. Pinned, it
+      reads as a pool of light the flower moves through — which is why the
+      plane is wide and the falloff flat, so the bloom stays lit at either end
+      of its travel rather than sliding off its own glow.
+    */
+    halo: {
+      size: 6.2,
+      offsetY: 0.28,
+      offsetZ: -0.7,
+      opacity: 0.3,
+      breathe: 0.05,
+      follow: 0,
+    },
+    /** The shaft plane is billboarded to the camera, like the halo. */
+    shafts: { width: 3.8, height: 4.2, offsetY: 0.6, offsetZ: -0.55, opacity: 0.46 },
+    motes: {
+      countDesktop: 150,
+      countMobile: 55,
+      /** Radius of the drifting field, and how tall a column it wraps around. */
+      radius: 2.5,
+      span: 4.4,
+      opacity: 0.75,
+      /** Point size in pixels at one unit from the camera. */
+      size: 110,
+    },
   },
 
   camera: {
@@ -119,8 +176,6 @@ export const FLOWER = {
     pointerDamping: 0.05,
     /** Maximum pointer-driven rotation, in radians. */
     pointerRange: 0.12,
-    breathSpeed: 0.34,
-    breathAmount: 0.012,
     driftSpeed: 0.11,
     driftAmount: 0.055,
     /*
@@ -134,17 +189,23 @@ export const FLOWER = {
     spinDamping: 0.05,
     /** Turns of the bloom per viewport height scrolled past the hero. */
     spinTurnsPerViewport: 0.32,
+    /*
+      Rotation the bloom has of its own, before the reader does anything.
+
+      The hero holds a finished, slowly turning flower. As soon as the page
+      moves, scroll takes over the rotation and this fades out, so the two
+      never fight for the same axis.
+    */
+    idleDamping: 0.04,
+    /** Turns per second while the page still sits on the hero. */
+    idleTurnsPerSecond: 0.06,
   },
 
   performance: {
-    maxPixelRatioDesktop: 1.75,
-    maxPixelRatioMobile: 1.25,
-    /** Mobile drops transmission entirely — it is the expensive part. */
-    mobileTransmission: 0.18,
-    mobileSegmentsU: 32,
-    mobileSegmentsV: 16,
+    maxPixelRatioDesktop: 1.5,
+    maxPixelRatioMobile: 1.0,
+    transmissionResolutionDesktop: 0.75,
+    transmissionResolutionMobile: 0.5,
   },
 } as const
 
-/** Five primary petals, one per workflow stage. Not a decorative count. */
-export const PETAL_COUNT = FLOWER.pose.petals.length

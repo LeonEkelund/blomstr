@@ -19,9 +19,16 @@ export function App() {
           <Hero />
           <ProductProof />
           <Workflow />
-          <Capabilities />
+          {/*
+            One panel, two beats. What the product does and who it does it for
+            are the same answer, and giving each its own glass panel made them
+            read as separate arguments with a gap of page between them.
+          */}
+          <div className="glass-section relative z-10">
+            <Capabilities />
+            <Collaboration />
+          </div>
         </div>
-        <Collaboration />
         <BloomCta />
       </main>
 

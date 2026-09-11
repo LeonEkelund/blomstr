@@ -16,6 +16,7 @@ export function FlowerCanvas() {
     let loading = false
     let failed = false
     let visible = false
+    const controller = new AbortController()
     const reduced = matchMedia("(prefers-reduced-motion: reduce)")
     const fine = matchMedia("(pointer: fine)")
 
@@ -30,9 +31,19 @@ export function FlowerCanvas() {
       const entered = clamp((innerHeight * 1.15 - workflow.top) / (innerHeight * 0.6))
       const anchorX = mobile ? 0 : 1.02 - entered * 2.04
       const anchorY = mobile ? 0.48 : 0
-      const progress = clamp(
+      /*
+        The hero holds a finished bloom. Scrolling away from it folds the
+        flower back into a bud, which is what gives the workflow track below
+        something to open again, one petal per stage.
+      */
+      const departure = clamp(-hero.top / (innerHeight * 0.75))
+      const opening = clamp(
         (innerHeight * 0.5 - track.top) / Math.max(track.height - innerHeight * 0.5, 1),
       )
+      // Whichever pose is further open wins. The fold normally completes well
+      // before the track starts opening, but on a short viewport the two
+      // windows can overlap, and there they cross over instead of snapping.
+      const progress = Math.max(1 - departure, opening)
       const opacity = mobile
         ? clamp(hero.bottom / (innerHeight * 0.6))
         : clamp(end.bottom / innerHeight)
@@ -47,7 +58,15 @@ export function FlowerCanvas() {
       host.style.opacity = String(opacity)
       host.style.setProperty("--flower-x", `${50 + anchorX * 22}%`)
       host.style.setProperty("--flower-y", `${50 - anchorY * 28}%`)
-      scene?.setTargets({ progress, anchorX, anchorY, spin })
+      // Phones show the completed model in the hero; the five-stage pinned
+      // opening remains a desktop interaction, beside the workflow copy.
+      scene?.setTargets({
+        progress: mobile ? 1 : progress,
+        anchorX,
+        anchorY,
+        spin,
+        idle: 1 - departure,
+      })
       if (opacity === 0) scene?.stop()
       else if (visible && !document.hidden && !reduced.matches) scene?.start()
     }
@@ -74,9 +93,18 @@ export function FlowerCanvas() {
       try {
         const { FlowerScene } = await import("@/flower/flower-scene")
         if (disposed) return
-        scene = new FlowerScene(canvas, {
-          isMobile: matchMedia("(max-width: 767px)").matches,
-        })
+        const loaded = await FlowerScene.create(
+          canvas,
+          {
+            isMobile: matchMedia("(max-width: 767px)").matches,
+          },
+          controller.signal,
+        )
+        if (disposed) {
+          loaded.dispose()
+          return
+        }
+        scene = loaded
         scene.setReducedMotion(reduced.matches)
         resize()
         scene.renderStatic()
@@ -110,6 +138,15 @@ export function FlowerCanvas() {
       })
     }
     const resetPointer = () => scene?.setTargets({ pointerX: 0, pointerY: 0 })
+    // The haze is tinted per theme — glow that lifts a dark page would be
+    // invisible on a white one. The toggle writes a class, so watch for it.
+    const theme = new MutationObserver(() =>
+      scene?.setTheme(document.documentElement.classList.contains("dark")),
+    )
+    theme.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    })
     const contextLost = () => {
       failed = true
       scene?.dispose()
@@ -125,8 +162,10 @@ export function FlowerCanvas() {
     reduced.addEventListener("change", playback)
     return () => {
       disposed = true
+      controller.abort()
       observer.disconnect()
       sizing.disconnect()
+      theme.disconnect()
       section?.removeEventListener("pointermove", pointer)
       section?.removeEventListener("pointerleave", resetPointer)
       canvas.removeEventListener("webglcontextlost", contextLost)
@@ -145,7 +184,7 @@ export function FlowerCanvas() {
     >
       {!ready && (
         <img
-          src="/flower-fallback.png"
+          src={`${import.meta.env.BASE_URL}models/Aurelia_V4/aurelia-fallback.webp`}
           alt=""
           width="700"
           height="700"

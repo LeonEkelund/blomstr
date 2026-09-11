@@ -37,9 +37,11 @@ const ROLES = [
 
 export function Collaboration() {
   return (
+    // Shares a panel with capabilities, so the two are separated by a hairline
+    // across the panel rather than by a gap between two of them.
     <section
       id={SECTIONS.collaboration}
-      className="glass-section relative z-10 py-20 sm:py-28"
+      className="border-t border-border pt-16 pb-24 sm:pt-20 sm:pb-32"
     >
       <div className="shell">
         <div className="grid gap-12 md:grid-cols-12">

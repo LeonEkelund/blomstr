@@ -4,24 +4,21 @@ import {
   Color,
   DirectionalLight,
   Group,
-  IcosahedronGeometry,
   MathUtils,
   Mesh,
   MeshBasicMaterial,
-  MeshPhysicalMaterial,
   PerspectiveCamera,
   PlaneGeometry,
   PMREMGenerator,
   Scene,
-  ShaderMaterial,
   SRGBColorSpace,
   Vector3,
   WebGLRenderer,
 } from "three"
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js"
-import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js"
-import { FLOWER, PETAL_COUNT } from "@/flower/flower-config"
-import { buildPetalGeometry } from "@/flower/petal-geometry"
+import { Atmosphere } from "@/flower/atmosphere"
+import { AureliaModel } from "@/flower/aurelia-model"
+import { FLOWER } from "@/flower/flower-config"
 
 /** What the page tells the scene. Everything else is the scene's own business. */
 export type FlowerTargets = {
@@ -39,22 +36,19 @@ export type FlowerTargets = {
    * as the page goes down; the scene decides how much rotation that buys.
    */
   spin: number
+  /**
+   * How much of the page is still at rest on the hero, 1 down to 0. Scales the
+   * bloom's own rotation, which is what turns it before anyone has scrolled.
+   */
+  idle: number
 }
 
-const DEG = MathUtils.degToRad
 const damp = (current: number, target: number, factor: number, dt: number) =>
   current + (target - current) * (1 - Math.exp(-factor * dt * 60))
 
 /** Radius the camera frames for. Comfortably larger than the open bloom, so
  * the silhouette keeps breathing room rather than filling the frame. */
 const FIT_RADIUS = 1.4
-
-/** A primary petal and everything the pose function needs to place it. */
-type Petal = {
-  pivot: Group
-  material: MeshPhysicalMaterial
-  spec: (typeof FLOWER.pose.petals)[number]
-}
 
 /** Smoothstep over an arbitrary window, clamped outside it. */
 function stageEase(progress: number, start: number, end: number) {
@@ -101,8 +95,8 @@ export class FlowerScene {
   private readonly camera: PerspectiveCamera
   private readonly root = new Group()
   private readonly bloom = new Group()
-  private readonly petals: Petal[] = []
-  private readonly innerPivots: Group[] = []
+  private readonly model: AureliaModel
+  private readonly atmosphere: Atmosphere
   private readonly disposables: { dispose(): void }[] = []
   private readonly rimLight: DirectionalLight
   private readonly isMobile: boolean
@@ -114,23 +108,48 @@ export class FlowerScene {
   private frameWidth = 2
   private frameHeight = 2
 
+  // The page opens on a finished bloom at rest, so that is the pose the scene
+  // starts from — not the bud it used to fold out of.
   private readonly targets: FlowerTargets = {
-    progress: 0,
+    progress: 1,
     anchorX: 0,
     anchorY: 0,
     pointerX: 0,
     pointerY: 0,
     spin: 0,
+    idle: 1,
   }
   private readonly current: FlowerTargets = { ...this.targets }
 
   private frame = 0
   private lastTime = 0
   private elapsed = 0
+  /** Accumulated idle rotation. It only ever grows, so the handoff to
+   * scroll-driven spin stops the turn rather than rewinding it. */
+  private idleAngle = 0
   private running = false
   private reducedMotion = false
 
-  constructor(canvas: HTMLCanvasElement, options: { isMobile: boolean }) {
+  static async create(
+    canvas: HTMLCanvasElement,
+    options: { isMobile: boolean },
+    signal?: AbortSignal,
+  ) {
+    const model = await AureliaModel.load(signal)
+    try {
+      return new FlowerScene(canvas, options, model)
+    } catch (error) {
+      model.dispose()
+      throw error
+    }
+  }
+
+  private constructor(
+    canvas: HTMLCanvasElement,
+    options: { isMobile: boolean },
+    model: AureliaModel,
+  ) {
+    this.model = model
     this.isMobile = options.isMobile
 
     this.renderer = new WebGLRenderer({
@@ -139,6 +158,9 @@ export class FlowerScene {
       antialias: !options.isMobile,
       powerPreference: "high-performance",
     })
+    this.renderer.transmissionResolutionScale = options.isMobile
+      ? FLOWER.performance.transmissionResolutionMobile
+      : FLOWER.performance.transmissionResolutionDesktop
     this.renderer.setClearAlpha(0)
     this.renderer.toneMapping = ACESFilmicToneMapping
     this.renderer.toneMappingExposure = FLOWER.lighting.exposure
@@ -168,13 +190,23 @@ export class FlowerScene {
 
     this.buildLights()
     this.rimLight = this.scene.getObjectByName("rim") as DirectionalLight
-    this.buildFlower()
+    this.bloom.add(model.object)
     this.buildContactShadow()
-    this.buildLightShafts()
+
+    /*
+      Both haze groups hang off the scene rather than `root`, so none of it is
+      dragged along by the flower's travel across the page. The halo is allowed
+      to copy some of that travel back via `atmosphere.halo.follow`, which is
+      the one dial that decides whether the glow belongs to the room or to the
+      bloom. Neither group goes on `bloom`, which spins.
+    */
+    this.atmosphere = new Atmosphere(this.camera, options)
+    this.scene.add(this.atmosphere.field)
+    this.scene.add(this.atmosphere.glow)
 
     this.root.add(this.bloom)
     this.scene.add(this.root)
-    this.applyPose(0)
+    this.applyPose(this.current.progress)
   }
 
   private buildLights() {
@@ -186,159 +218,6 @@ export class FlowerScene {
       light.name = name
       this.scene.add(light)
     }
-  }
-
-  private buildLightShafts() {
-    // Soft, depth-integrated light cones, isolated to the flower's local space.
-    // No full-screen post-processing or light behind the page's CTA.
-    const geometry = new PlaneGeometry(3.8, 4.2)
-    const material = new ShaderMaterial({
-      transparent: true,
-      depthWrite: false,
-      uniforms: { tint: { value: new Color("#a9e0bb") } },
-      vertexShader: `varying vec2 vUv;
-        void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-      fragmentShader: `varying vec2 vUv;
-        uniform vec3 tint;
-        void main() {
-          vec2 p = vUv - vec2(0.7, 0.96);
-          float depth = -p.y;
-          float beam = 0.0;
-          for (int i = 0; i < 12; i++) {
-            float z = float(i) / 12.0;
-            float width = 0.016 + depth * (0.12 + z * 0.05);
-            float axis = p.x + depth * (0.3 + z * 0.16);
-            beam += exp(-pow(axis / width, 2.0) * 2.0) * 0.035;
-            beam += exp(-pow((axis + depth * 0.27) / (width * 0.32), 2.0)) * 0.012;
-          }
-          float fade = smoothstep(0.0, 0.18, depth) * (1.0 - smoothstep(0.3, 0.86, depth));
-          gl_FragColor = vec4(tint, beam * fade * 0.42);
-        }`,
-    })
-    const shafts = new Mesh(geometry, material)
-    shafts.position.set(0, 0.6, -0.55)
-    shafts.quaternion.copy(this.camera.quaternion)
-    shafts.renderOrder = -1
-    this.root.add(shafts)
-    this.disposables.push(geometry, material)
-  }
-
-  private buildFlower() {
-    const g = FLOWER.geometry
-    const petalGeometry = buildPetalGeometry({
-      ...g,
-      segmentsU: this.isMobile ? FLOWER.performance.mobileSegmentsU : g.segmentsU,
-      segmentsV: this.isMobile ? FLOWER.performance.mobileSegmentsV : g.segmentsV,
-    })
-    this.disposables.push(petalGeometry)
-
-    const m = FLOWER.material
-    const baseMaterial = new MeshPhysicalMaterial({
-      color: new Color(m.petalColor),
-      metalness: 0,
-      roughness: m.roughness,
-      // Transmission is the expensive part of this material, so mobile keeps
-      // only enough of it to preserve the luminous edges.
-      transmission: this.isMobile
-        ? FLOWER.performance.mobileTransmission
-        : m.transmission,
-      thickness: m.thickness,
-      ior: m.ior,
-      clearcoat: m.clearcoat,
-      clearcoatRoughness: m.clearcoatRoughness,
-      iridescence: m.iridescence,
-      attenuationColor: new Color(m.attenuationColor),
-      attenuationDistance: m.attenuationDistance,
-      emissive: new Color(m.petalColor),
-      emissiveIntensity: 0,
-    })
-
-    // Five primary petals, one per workflow stage.
-    for (const [i, spec] of FLOWER.pose.petals.entries()) {
-      const ring = new Group()
-      ring.rotation.y = (i / PETAL_COUNT) * Math.PI * 2 + spec.spin
-
-      const pivot = new Group()
-      // Set out from the axis so the closed petals wrap the centre instead of
-      // intersecting it.
-      pivot.position.set(0, 0.02, 0.055)
-      pivot.rotation.z = spec.lean
-      pivot.scale.setScalar(spec.scale)
-
-      const material = baseMaterial.clone()
-      // A barely-there per-petal colour shift. Reads as depth, not as five
-      // differently coloured petals.
-      material.color.offsetHSL(0, (i % 2 === 0 ? 1 : -1) * 0.012, i * 0.004)
-      this.disposables.push(material)
-
-      pivot.add(new Mesh(petalGeometry, material))
-      ring.add(pivot)
-      this.bloom.add(ring)
-      this.petals.push({ pivot, material, spec })
-    }
-
-    // An inner ring that gives the centre something to sit behind. Offset
-    // from the primary petals so it reads through the gaps between them.
-    const innerMaterial = baseMaterial.clone()
-    innerMaterial.color.offsetHSL(0, 0.03, -0.05)
-    innerMaterial.transmission = (baseMaterial.transmission as number) * 0.8
-    this.disposables.push(innerMaterial)
-
-    for (let i = 0; i < FLOWER.inner.count; i++) {
-      const ring = new Group()
-      ring.rotation.y = (i / FLOWER.inner.count) * Math.PI * 2 + Math.PI / PETAL_COUNT
-
-      const pivot = new Group()
-      pivot.position.set(0, 0.03, 0.03)
-      pivot.scale.setScalar(FLOWER.inner.scale)
-
-      pivot.add(new Mesh(petalGeometry, innerMaterial))
-      ring.add(pivot)
-      this.bloom.add(ring)
-      this.innerPivots.push(pivot)
-    }
-
-    this.bloom.add(this.buildCentre())
-    this.disposables.push(baseMaterial)
-  }
-
-  private buildCentre() {
-    const { centre, material } = FLOWER
-    const source = new IcosahedronGeometry(centre.radius, 3)
-    source.deleteAttribute("normal")
-    source.deleteAttribute("uv")
-    const geometry = mergeVertices(source)
-    source.dispose()
-
-    // Nudge each vertex along its own direction so the receptacle reads as an
-    // organic form rather than a sphere.
-    const position = geometry.getAttribute("position")
-    const v = new Vector3()
-    for (let i = 0; i < position.count; i++) {
-      v.fromBufferAttribute(position, i)
-      const noise = Math.sin(v.x * 9.1) * Math.cos(v.y * 7.7) * Math.sin(v.z * 8.3 + 1.4)
-      v.multiplyScalar(1 + noise * centre.irregularity)
-      position.setXYZ(i, v.x, v.y * centre.flatten, v.z)
-    }
-    geometry.computeVertexNormals()
-
-    const centreMaterial = new MeshPhysicalMaterial({
-      color: new Color(material.centreColor),
-      metalness: 0,
-      roughness: material.centreRoughness,
-      // Satin, not translucent: the centre has to contrast with the petals.
-      transmission: 0,
-      clearcoat: 0.1,
-      emissive: new Color(material.centreEmissive),
-      emissiveIntensity: material.centreEmissiveIntensity,
-    })
-
-    this.disposables.push(geometry, centreMaterial)
-
-    const mesh = new Mesh(geometry, centreMaterial)
-    mesh.position.y = 0.06
-    mesh.name = "centre"
-    return mesh
   }
 
   private buildContactShadow() {
@@ -368,32 +247,7 @@ export class FlowerScene {
    * backwards is simply the same function evaluated at a lower progress.
    */
   private applyPose(progress: number) {
-    const { closedDegrees, openDegrees } = FLOWER.pose
-    const breath = this.reducedMotion
-      ? 0
-      : Math.sin(this.elapsed * FLOWER.motion.breathSpeed) * FLOWER.motion.breathAmount
-
-    for (const [i, petal] of this.petals.entries()) {
-      const open = stageEase(progress, petal.spec.open[0], petal.spec.open[1])
-      const tilt = MathUtils.lerp(closedDegrees, openDegrees + petal.spec.tilt, open)
-
-      // Petal tips keep breathing slightly out of phase with each other, so
-      // the idle bloom never looks like a single rigid object pulsing.
-      petal.pivot.rotation.x = DEG(tilt) * (1 + breath * Math.sin(i * 1.7))
-
-      // The closed bud holds its petals a little tighter than the open bloom.
-      petal.pivot.scale.setScalar(petal.spec.scale * MathUtils.lerp(0.94, 1, open))
-
-      // As a stage becomes active its petal lifts fractionally in luminance.
-      // This is the "highlight travelling toward the tip" reduced to
-      // something a physical material can actually do.
-      const active = open > 0.04 && open < 0.98 ? Math.sin(open * Math.PI) : 0
-      petal.material.emissiveIntensity = 0.035 + active * 0.06
-    }
-
-    for (const pivot of this.innerPivots) {
-      pivot.rotation.x = DEG(MathUtils.lerp(4, FLOWER.inner.openDegrees, progress))
-    }
+    this.model.applyPose(progress)
 
     // The rim strengthens slightly as the bloom completes, which is what
     // makes the finished silhouette feel resolved rather than merely open.
@@ -411,6 +265,11 @@ export class FlowerScene {
     }
   }
 
+  setTheme(dark: boolean) {
+    this.atmosphere.setTheme(dark)
+    if (!this.running) this.renderStatic()
+  }
+
   setReducedMotion(reduced: boolean) {
     this.reducedMotion = reduced
     if (reduced) {
@@ -422,6 +281,8 @@ export class FlowerScene {
       this.targets.pointerY = 0
       this.current.pointerX = 0
       this.current.pointerY = 0
+      this.targets.idle = 0
+      this.current.idle = 0
     }
   }
 
@@ -430,8 +291,11 @@ export class FlowerScene {
       ? FLOWER.performance.maxPixelRatioMobile
       : FLOWER.performance.maxPixelRatioDesktop
 
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, ratio))
+    const pixelRatio = Math.min(window.devicePixelRatio, ratio)
+    this.renderer.setPixelRatio(pixelRatio)
     this.renderer.setSize(width, height, false)
+    // Point sizes are in device pixels, so the mote field has to be told.
+    this.atmosphere.setPixelRatio(pixelRatio)
 
     const aspect = width / height
     this.camera.aspect = aspect
@@ -480,6 +344,7 @@ export class FlowerScene {
   renderStatic() {
     Object.assign(this.current, this.targets)
     this.applyPose(this.current.progress)
+    this.atmosphere.update(this.reducedMotion ? 0 : this.elapsed, this.current.progress)
     this.updateTransform()
     this.renderer.render(this.scene, this.camera)
     // Physical transmission settles after the initial environment upload.
@@ -494,6 +359,14 @@ export class FlowerScene {
     this.root.position.x = this.current.anchorX * this.frameWidth * 0.22
     this.root.position.y = this.current.anchorY * this.frameHeight * 0.28
 
+    // Fixed in frame at follow = 0, locked to the bloom at 1.
+    const follow = FLOWER.atmosphere.halo.follow
+    this.atmosphere.glow.position.set(
+      this.root.position.x * follow,
+      this.root.position.y * follow,
+      0,
+    )
+
     const drift = this.reducedMotion
       ? 0
       : Math.sin(this.elapsed * motion.driftSpeed) *
@@ -501,13 +374,13 @@ export class FlowerScene {
         motion.driftAmount
 
     /*
-      Rotation is scroll first, then the idle drift, then the pointer. Reduced
-      motion drops the spin entirely — it is the one part of the pose that is
-      rotation for its own sake, so it is the part that has to go.
+      Rotation is the bloom's own turn, then scroll, then the idle drift, then
+      the pointer. Reduced motion drops both spins entirely — they are the
+      parts of the pose that are rotation for its own sake, so they have to go.
     */
     const spin = this.reducedMotion
       ? 0
-      : this.current.spin * motion.spinTurnsPerViewport * Math.PI * 2
+      : this.idleAngle + this.current.spin * motion.spinTurnsPerViewport * Math.PI * 2
 
     // Pointer nudges the pose; it never replaces it. The scroll stage stays
     // in charge of where the petals are.
@@ -534,17 +407,24 @@ export class FlowerScene {
       c.pointerX = damp(c.pointerX, t.pointerX, motion.pointerDamping, dt)
       c.pointerY = damp(c.pointerY, t.pointerY, motion.pointerDamping, dt)
       c.spin = damp(c.spin, t.spin, motion.spinDamping, dt)
+      c.idle = damp(c.idle, t.idle, motion.idleDamping, dt)
+      // A rate, not a position: the hero turns the bloom continuously, and
+      // scrolling eases that rate to zero instead of snapping the angle back.
+      this.idleAngle += dt * c.idle * motion.idleTurnsPerSecond * Math.PI * 2
     }
     c.anchorX = damp(c.anchorX, t.anchorX, motion.anchorDamping, dt)
     c.anchorY = damp(c.anchorY, t.anchorY, motion.anchorDamping, dt)
 
     this.applyPose(c.progress)
+    this.atmosphere.update(this.reducedMotion ? 0 : this.elapsed, c.progress)
     this.updateTransform()
     this.renderer.render(this.scene, this.camera)
   }
 
   dispose() {
     this.stop()
+    this.atmosphere.dispose()
+    this.model.dispose()
     for (const item of this.disposables) item.dispose()
     this.scene.clear()
     this.renderer.dispose()

@@ -59,10 +59,9 @@ const CAPABILITIES = [
 
 export function Capabilities() {
   return (
-    <section
-      id={SECTIONS.capabilities}
-      className="glass-section relative z-10 py-24 sm:py-32"
-    >
+    // The panel itself lives in App, shared with collaboration; this section
+    // only owns its own vertical rhythm within it.
+    <section id={SECTIONS.capabilities} className="pt-24 pb-16 sm:pt-32 sm:pb-20">
       <div className="shell">
         <Reveal className="max-w-2xl">
           <h2 className="display text-[clamp(2rem,4.4vw,3.25rem)]">

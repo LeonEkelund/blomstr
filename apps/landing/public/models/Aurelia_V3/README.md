@@ -19,7 +19,7 @@ Reflective smoked glass with higher transmission and a restrained metallic sheen
 
 ```js
 import { loadFlower } from './threejs-flower.js';
-const flower = await loadFlower('/aurelia_flower.glb');
+const flower = await loadFlower('/models/Aurelia_V3/aurelia_flower.glb');
 scene.add(flower.object); // initially folded
 flower.playUnfold(5);    // five consecutive steps over five seconds
 
