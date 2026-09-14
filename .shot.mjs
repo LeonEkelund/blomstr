@@ -109,9 +109,19 @@ for (const [name, target] of shots) {
         ? `window.scrollTo(0, ${target.slice(2)})`
         : `document.querySelector(${JSON.stringify(target)}).scrollIntoView()`,
   )
-  // Let the damped scroll targets settle before capturing.
-  await sleep(2500)
+  // Let scroll-linked effects settle before capturing.
+  await sleep(1200)
   if (process.env.PREP) await evaluate(process.env.PREP)
+  /*
+    HOVER="x,y" parks a real cursor there before the shot. Needed because
+    :hover cannot be forced from page script — only an actual input event puts
+    the document into the hover state the stylesheet is keyed on.
+  */
+  if (process.env.HOVER) {
+    const [x, y] = process.env.HOVER.split(",").map(Number)
+    await send("Input.dispatchMouseEvent", { type: "mouseMoved", x, y, buttons: 0 })
+    await sleep(900)
+  }
   const { data } = await send("Page.captureScreenshot", {
     format: "png",
     ...(process.env.CLIP ? { clip: { ...JSON.parse(process.env.CLIP), scale: 1 } } : {}),
@@ -119,9 +129,8 @@ for (const [name, target] of shots) {
   writeFileSync(`${OUT}/shot-${name}.png`, Buffer.from(data, "base64"))
   const state = await evaluate(`JSON.stringify({
     scrollY: Math.round(window.scrollY),
-    heroTop: Math.round(document.getElementById("top").getBoundingClientRect().top),
-    trackTop: Math.round(document.getElementById("workflow-track").getBoundingClientRect().top),
-    canvasOpacity: document.querySelector("canvas")?.parentElement.style.opacity,
+    heroTop: Math.round(document.getElementById("top")?.getBoundingClientRect().top ?? 0),
+    glow: document.querySelector(".glass-section")?.style.getPropertyValue("--glow-x") || "unset",
   })`)
   console.log(name, state)
 }

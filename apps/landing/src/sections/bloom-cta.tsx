@@ -10,10 +10,21 @@ export function BloomCta() {
 
   return (
     <section className="closing-cta relative z-10 overflow-hidden py-24 sm:py-32">
+      {/*
+        The same mark language as the ambient field, so the CTA reads as the
+        page's last panel rather than as a different surface.
+
+        This was the Blomstr glyph tiled at 16px. A four-square mark that size,
+        edge to edge, is too much figure for a background: it builds an even
+        heavy plaid and the eye finds a moiré in it instead of a texture. A
+        single dash at a wider gauge has no internal structure to beat against
+        its neighbours, and the logo still appears above the headline where it
+        can be read as a logo.
+      */}
       <svg className="closing-cta-pattern" width="100%" height="100%" aria-hidden="true">
         <defs>
-          <pattern id={patternId} width="16" height="16" patternUnits="userSpaceOnUse">
-            <Logo x="5" y="5" width="6" height="6" aria-hidden="true" />
+          <pattern id={patternId} width="26" height="26" patternUnits="userSpaceOnUse">
+            <rect x="9" y="12.2" width="8" height="1.6" rx="0.8" fill="currentColor" />
           </pattern>
         </defs>
         <rect width="100%" height="100%" fill={`url(#${patternId})`} />
