@@ -26,7 +26,7 @@ export function Hero() {
         }
 
   return (
-    <section id="top" className="relative min-h-[100svh] pt-28 pb-16 sm:pt-32">
+    <section id="top" className="relative min-h-[100svh] pt-24 pb-16 sm:pt-28">
       <div className="shell">
         <div className="mx-auto max-w-3xl text-center">
           <motion.p {...rise(0.05)} className="eyebrow">
@@ -66,20 +66,27 @@ export function Hero() {
               <ArrowDownIcon />
             </Button>
           </motion.div>
-
         </div>
-
-        {/*
-          The nav's "Product" link lands here rather than on the section, so it
-          scrolls to the workspace itself instead of to the top of the page.
-        */}
-        <motion.div {...rise(0.38)} id={SECTIONS.product} className="mt-16 sm:mt-20">
-          <ProductPreview />
-          <p className="mt-4 text-center text-xs text-muted-foreground">
-            An example project in Blomstr. Explore Overview and Review.
-          </p>
-        </motion.div>
       </div>
+
+      {/*
+        Outside the shell on purpose: the screenshot is the evidence for the
+        sentence above it, so it gets to be the wider object. The nav's
+        "Product" link lands here rather than on the section, so it scrolls to
+        the workspace itself instead of to the top of the page.
+      */}
+      <motion.div
+        {...rise(0.38)}
+        id={SECTIONS.product}
+        className="mt-12 px-[clamp(1.25rem,5vw,3rem)] sm:mt-14"
+      >
+        <div className="hero-stage">
+          <ProductPreview />
+        </div>
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          An example project in Blomstr. Explore Overview and Review.
+        </p>
+      </motion.div>
     </section>
   )
 }

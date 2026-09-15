@@ -117,10 +117,6 @@
   --glass-blur: 20px;
   --glass-saturate: 140%;
 
-  /* The ambient field. Cool pole of the wash, and the mark tint. */
-  --ambient-cool: #4a93c8;
-  --ambient-mark: rgb(16 24 40 / 13%);
-
   /*
     Three levels of elevation, matching the three levels of depth in the
     brief: tonal content, lifted product surfaces, floating controls. Each
@@ -192,9 +188,8 @@
   /*
     The marks carry more weight on dark than on light. On a near-black page a
     mark at the light theme's strength disappears entirely once it is behind
-    glass; the wash is doing less work here, so the structure has to do more.
+    glass, and with no wash under them they are the whole field.
   */
-  --ambient-cool: #5aa8e0;
   --ambient-mark: rgb(255 255 255 / 14%);
 
   /* Shadow on a dark canvas reads as smudge, so depth leans on the hairline. */
@@ -342,7 +337,6 @@
     );
     mask-image: radial-gradient(ellipse 68% 62% at 50% 50%, #000 40%, transparent 100%);
   }
-
 }
 
 @layer components {
@@ -360,38 +354,48 @@
     pointer-events: none;
     overflow: hidden;
   }
-  .ambient-wash,
   .ambient-marks {
     position: absolute;
     inset: 0;
   }
   /*
-    Three offset pools rather than one centred wash.
+    The light pool.
 
-    A single radial behind centred copy reads as a vignette — symmetrical, and
-    symmetry is what makes a gradient look like a default. Offsetting them
-    against each other means no two glass panels on the page travel over the
-    same colour.
+    Not the coloured wash this replaced. That one was a hue spread across the
+    whole field, which is decoration; this is neutral light placed low in the
+    frame so the product shot sits *in* it, the way a softbox sits under a
+    subject. Colour was what made the old one read as an aurora-blob default —
+    the technique was never the problem.
+
+    Dark lifts the centre. Light cannot add white to white, so it darkens the
+    surround instead and arrives at the same reading: bright where the
+    screenshot is, falling off toward the corners.
   */
-  .ambient-wash {
-    background:
-      radial-gradient(
-        ellipse 58% 48% at 16% 8%,
-        color-mix(in srgb, var(--primary) 15%, transparent),
-        transparent 70%
-      ),
-      radial-gradient(
-        ellipse 52% 44% at 86% 34%,
-        color-mix(in srgb, var(--ambient-cool) 12%, transparent),
-        transparent 72%
-      ),
-      radial-gradient(
-        ellipse 66% 52% at 46% 96%,
-        color-mix(in srgb, var(--primary) 11%, transparent),
-        transparent 75%
-      );
-  }
   /*
+    There is no pool, in either theme.
+
+    Three attempts died here: a green wash (brand colour spent on a surface
+    nobody looks at), a white-on-grey raster (no transparency, so every opacity
+    was a grey veil), and a gradient (the same idiom, just cheaper). The ground
+    is flat. Depth on this page comes from the mark field, the plinth under the
+    product shot, and that shot's own shadow — structure, which dates far
+    better than light.
+  */
+  /*
+    Dark runs the real asset rather than a gradient approximating it.
+
+    The file is a grey field with a white hotspot low-centre. At this opacity
+    the grey lifts the lower frame slightly and the hotspot lifts it a lot,
+    which is the studio-light reading. No blend mode: screening a mid grey over
+    a near-black page washes the whole thing out, and plain alpha is
+    predictable across browsers.
+
+    Two pseudo-elements because the fade must not be dimmed by the image's own
+    opacity — ::after pulls the top of the frame back to the page colour at
+    full strength, so the glow stays low where the product shot is.
+  */
+  /*
+
     The marks.
 
     Drawn as a mask over a flat colour rather than as a coloured background
@@ -455,6 +459,21 @@
     opacity: 0.16;
     mask-image: radial-gradient(ellipse 62% 58% at 50% 50%, transparent 30%, #000 100%);
   }
+  /*
+    Width only — no plinth.
+
+    This carried a surface under the product shot for a while: a tonal step, a
+    hairline, generous padding. It went the way of the glow. All that is left
+    is the job it was actually needed for, breaking the screenshot out past the
+    text column so the evidence is the larger object; the shot's own border and
+    shadow separate it from the ground.
+  */
+  .hero-stage {
+    width: 100%;
+    max-width: 88rem;
+    margin-inline: auto;
+  }
+
   .product-preview {
     display: flex;
     overflow: hidden;
@@ -630,9 +649,10 @@
     pointer-events: none;
     opacity: 0;
     transition: opacity var(--motion-cinematic, 600ms) var(--motion-ease-cinematic, ease);
+    /* Neutral, like the pool. Light follows the cursor; colour does not. */
     background: radial-gradient(
       30rem circle at var(--glow-x, 50%) var(--glow-y, 50%),
-      color-mix(in srgb, var(--primary) 22%, transparent),
+      rgb(255 255 255 / 5%),
       transparent 68%
     );
   }
