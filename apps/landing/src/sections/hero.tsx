@@ -83,9 +83,6 @@ export function Hero() {
         <div className="hero-stage">
           <ProductPreview />
         </div>
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          An example project in Blomstr. Explore Overview and Review.
-        </p>
       </motion.div>
     </section>
   )
