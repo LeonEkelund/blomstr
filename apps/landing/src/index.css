@@ -503,10 +503,49 @@
   }
   .preview-tabs button {
     cursor: pointer;
+    transition: color var(--motion-standard) var(--motion-ease);
+  }
+  .preview-tabs button:hover {
+    color: var(--foreground);
+  }
+  /*
+    The five views that are not wired up.
+
+    They earn their place by showing how much a project holds, but rendered at
+    the same weight as the two live tabs they are a promise the preview does
+    not keep: you click Notes, nothing happens, and the demo reads as broken —
+    on the one part of the page whose whole job is to look like working
+    software. Dimmed, and with no pointer, they read as context rather than as
+    controls. They are already spans rather than buttons, so keyboard and
+    screen reader users were never offered them; this only makes the styling
+    tell the same truth the markup always did.
+  */
+  .preview-tabs span {
+    opacity: 0.45;
+    cursor: default;
   }
   .preview-tabs .is-active {
     box-shadow: inset 0 -2px var(--foreground);
     color: var(--foreground);
+  }
+  /*
+    Panels fade in on swap. The two live views are different heights of the
+    same frame, and cutting between them hard reads as a repaint rather than
+    as a tab changing.
+  */
+  @media (prefers-reduced-motion: no-preference) {
+    .preview-overview,
+    .preview-review {
+      animation: preview-swap var(--motion-panel) var(--motion-ease);
+    }
+  }
+  @keyframes preview-swap {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
   .preview-overview {
     min-height: 492px;
