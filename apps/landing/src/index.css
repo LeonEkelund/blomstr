@@ -443,22 +443,6 @@
       100% 100%;
   }
 
-  .closing-cta {
-    background: var(--deep);
-    color: var(--deep-foreground);
-  }
-  /*
-    Masked out of the middle so the marks never sit behind the headline — the
-    field is there to fill the margins, not to be read through.
-  */
-  .closing-cta-pattern {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    color: var(--deep-foreground);
-    opacity: 0.16;
-    mask-image: radial-gradient(ellipse 62% 58% at 50% 50%, transparent 30%, #000 100%);
-  }
   /*
     Width only — no plinth.
 
