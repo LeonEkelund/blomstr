@@ -43,12 +43,6 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  /* The one cinematic dark surface, used by a section or two for contrast. */
-  --color-deep: var(--deep);
-  --color-deep-foreground: var(--deep-foreground);
-  --color-deep-muted: var(--deep-muted);
-  --color-deep-border: var(--deep-border);
-
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -85,20 +79,6 @@
   --shadow-color: 16 24 40;
 
   /* ---- Landing additions ---- */
-
-  /*
-    The deep section — the page's one dark moment.
-
-    Neutral rather than green. Green is rationed by area, and a full-bleed
-    green panel is the largest possible spend of it; it also left the primary
-    button sitting green-on-green with nothing to distinguish it. Neutral here
-    means the button is the only saturated thing on the screen, which is the
-    point of a closing call to action.
-  */
-  --deep: #17181c;
-  --deep-foreground: #edeef0;
-  --deep-muted: #a0a2ae;
-  --deep-border: #2d2e35;
 
   /*
     Glass. Reserved for navigation and a few floating surfaces — not the
@@ -169,16 +149,6 @@
   --shadow-color: 0 0 0;
 
   /* ---- Landing additions ---- */
-
-  /*
-    On a dark page the deep section can no longer be the dark moment, so it
-    inverts its job: it becomes the one section *lifted above* its
-    surroundings rather than sunk below them.
-  */
-  --deep: #212328;
-  --deep-foreground: #edeef0;
-  --deep-muted: #a0a2ae;
-  --deep-border: #34363d;
 
   --glass-bg: rgb(28 29 33 / 52%);
   --glass-bg-opaque: rgb(28 29 33 / 94%);
@@ -382,20 +352,6 @@
     better than light.
   */
   /*
-    Dark runs the real asset rather than a gradient approximating it.
-
-    The file is a grey field with a white hotspot low-centre. At this opacity
-    the grey lifts the lower frame slightly and the hotspot lifts it a lot,
-    which is the studio-light reading. No blend mode: screening a mid grey over
-    a near-black page washes the whole thing out, and plain alpha is
-    predictable across browsers.
-
-    Two pseudo-elements because the fade must not be dimmed by the image's own
-    opacity — ::after pulls the top of the frame back to the page colour at
-    full strength, so the glow stays low where the product shot is.
-  */
-  /*
-
     The marks.
 
     Drawn as a mask over a flat colour rather than as a coloured background
@@ -657,38 +613,14 @@
       inset 0 1px 0 var(--glass-highlight);
   }
   /*
-    The pointer lifts the panel where it rests.
+    No pointer highlight.
 
-    Behind the content rather than over it — this is meant to read as light
-    reaching the glass from the field underneath, not as a wash laid across the
-    words. Hover-gated, because on a touch screen the coordinates are wherever
-    the last tap landed and a panel lit from there looks like a bug.
+    The panel carried a cursor-tracking radial behind its content. It is not
+    interactive, so the hover state indicated no affordance, and it faded
+    opacity inside a `backdrop-filter` element — re-rasterising the blur across
+    the whole panel for the length of the transition. The glass reads as glass
+    from its border, blur, saturation and lit top edge without it.
   */
-  .glass-section::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity var(--motion-cinematic, 600ms) var(--motion-ease-cinematic, ease);
-    /* Neutral, like the pool. Light follows the cursor; colour does not. */
-    background: radial-gradient(
-      30rem circle at var(--glow-x, 50%) var(--glow-y, 50%),
-      rgb(255 255 255 / 5%),
-      transparent 68%
-    );
-  }
-  @media (hover: hover) {
-    .glass-section:hover::before {
-      opacity: 1;
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .glass-section::before {
-      transition: none;
-    }
-  }
   @media (max-width: 767px) {
     .glass-section {
       -webkit-backdrop-filter: blur(12px);

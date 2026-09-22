@@ -25,8 +25,6 @@ const buttonVariants = cva(
           material so nav and hero controls stay one material, not two.
         */
         glass: "glass text-foreground hover:bg-[var(--glass-bg-opaque)]",
-        /* For use on the deep green section, where the palette inverts. */
-        deep: "border-(--deep-border) bg-transparent text-(--deep-foreground) hover:bg-white/10",
       },
       size: {
         default: "h-9 gap-2 px-3.5",

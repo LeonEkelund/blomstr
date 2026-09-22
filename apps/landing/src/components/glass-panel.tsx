@@ -1,15 +1,18 @@
 import { cn } from "@blomstr/ui"
-import type { PointerEvent, ReactNode } from "react"
-import { useRef } from "react"
+import type { ReactNode } from "react"
 
 /*
-  A glass surface that lifts under the pointer.
+  A glass surface.
 
-  The highlight is a radial gradient positioned from two custom properties, so
-  following the pointer costs a style recalculation and no React render. It is
-  hover-gated in CSS rather than here: on a touch screen a pointer position is
-  wherever the last tap happened, and a panel lit from a stale coordinate reads
-  as a rendering fault rather than as a response to anything.
+  It used to lift under the pointer: a radial highlight tracked from two custom
+  properties. That went, for the same reason the ambient wash did. The panel is
+  not interactive, so a hover response answered a question nobody asked, and it
+  animated opacity inside a `backdrop-filter` element — re-rasterising a 20px
+  blur across the whole panel every frame, which is exactly what the ambient
+  field is built to avoid.
+
+  The material carries the identity now: border, blur, saturation and the lit
+  top edge. No per-frame work on pointer move.
 */
 export function GlassPanel({
   children,
@@ -18,25 +21,5 @@ export function GlassPanel({
   children: ReactNode
   className?: string
 }) {
-  const ref = useRef<HTMLDivElement>(null)
-
-  const track = (event: PointerEvent<HTMLDivElement>) => {
-    const panel = ref.current
-    if (!panel) return
-    const bounds = panel.getBoundingClientRect()
-    panel.style.setProperty(
-      "--glow-x",
-      `${((event.clientX - bounds.left) / bounds.width) * 100}%`,
-    )
-    panel.style.setProperty(
-      "--glow-y",
-      `${((event.clientY - bounds.top) / bounds.height) * 100}%`,
-    )
-  }
-
-  return (
-    <div ref={ref} onPointerMove={track} className={cn("glass-section", className)}>
-      {children}
-    </div>
-  )
+  return <div className={cn("glass-section", className)}>{children}</div>
 }
