@@ -7,9 +7,13 @@
   returned the marketing page to itself instead of 404ing, which is the worst
   of both — no error to notice, and no sign-in either.
 
-  Set VITE_APP_URL on the landing deployment to the app's origin (a subdomain,
-  e.g. https://app.blomstr.app). The fallback is the app's dev server, so
-  `pnpm dev` in both apps hands off correctly with no env file.
+  Set VITE_APP_URL on the landing deployment to the app's origin. That is
+  https://studio.blomstr.app — "studio" rather than "app" because the TLD is
+  already .app and the product calls itself a studio workspace in its own
+  sidebar. Until the domain is live, point it at the app's netlify.app URL.
+
+  The fallback is the app's dev server, so `pnpm dev` in both apps hands off
+  correctly with no env file.
 */
 const APP_ORIGIN = import.meta.env.VITE_APP_URL ?? "http://localhost:5173"
 
