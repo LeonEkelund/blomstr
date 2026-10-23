@@ -224,7 +224,7 @@
 
   /*
     Display type. Instrument Serif is an accent for marketing headlines only —
-    never controls, paragraphs or anything inside a product vignette. It sits
+    never controls, paragraphs or anything inside the product preview. It sits
     optically larger than Geist at the same size, so it takes a tighter
     leading and a touch of negative tracking to sit calmly.
   */
@@ -273,25 +273,6 @@
     .glass {
       background: var(--glass-bg-opaque);
     }
-  }
-
-  /*
-    Product surfaces. Level two of the depth hierarchy: lifted off the page,
-    but not glass — a vignette needs an opaque background so the app UI inside
-    it reads at full contrast.
-  */
-  .surface {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--elevation-2);
-  }
-
-  .surface-raised {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-2xl);
-    box-shadow: var(--elevation-3);
   }
 
   /*

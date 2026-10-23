@@ -133,11 +133,12 @@ project page.
 
 - **`ancestor_ids` drift is a permission leak**, not a data bug. Triggers
   maintain it; `check_ancestor_integrity()` should run in tests.
-- **No RLS coverage test.** The query in supabase_guide.md §11 asserts every
-  table has RLS on with at least one policy. Should be automated — it's the
-  check that catches the table added at 1am.
+- **No RLS coverage test.** Nothing asserts that every table has RLS on with
+  at least one policy. Should be automated — it's the check that catches the
+  table added at 1am.
 - **`can_read_item` has no tests.** The one function where a bug is a data
-  breach rather than a broken screen. Seven cases listed in the guide, §10.
+  breach rather than a broken screen: direct grants, grants inherited through
+  `ancestor_ids`, staff, and a guest reaching for a project they weren't given.
 - **No app-side test runner.** `rank.ts` is pure, breakable, and untested.
 - **No error boundary.** A component that throws blanks the entire app rather
   than one panel — which is how a small bug in the notes editor once took down
