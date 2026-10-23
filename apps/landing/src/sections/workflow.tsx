@@ -28,16 +28,17 @@ const STAGES = [
 ]
 
 /*
-  One stage, lit while the reader is on it.
+  One stage, lit once the reader reaches it — and left lit.
 
-  The band is a thin strip across the middle of the viewport — everything above
-  and below is dimmed, so the lit stage is wherever the reader's eye already
-  is. It reads as moving *through* a sequence rather than skimming a list,
-  which is the one thing these five words are here to say.
+  It used to light only while it straddled a hairline across the middle of
+  the viewport, which needed every stage to stand 30svh tall so something was
+  always crossing that line: five stages of six words each, spread over a
+  screen and a half. At a natural height the list mostly sits off-centre, and
+  a centre-tracking highlight would dim all five. Lighting on arrival keeps the
+  sense of moving through a sequence at a third of the length.
 
-  The dimming is desktop-only. On a phone two or three stages fill the screen
-  at once and there is no meaningful "where you are"; dimming there just makes
-  two thirds of the section hard to read.
+  The dimming is desktop-only. On a phone the whole list is on screen at once
+  and there is no meaningful "where you are".
 
   Only the content dims, never the rule above it. Fading the hairlines in and
   out turns the structure of the list into part of the animation, and the list
@@ -45,25 +46,11 @@ const STAGES = [
 */
 function Stage({ index, stage }: { index: number; stage: (typeof STAGES)[number] }) {
   const ref = useRef<HTMLLIElement>(null)
-  /*
-    A hairline across the middle of the viewport, not a band.
-
-    `useInView` fires when any part of the element touches the root, and a
-    stage is taller than a generous band is — so at -42% two neighbours both
-    qualified and two stages lit at once, which defeats the whole point. At
-    -49% the root is a couple of pixels tall: exactly one stage can straddle
-    it, except for the instant a boundary crosses, which crossfades.
-
-    Not -50%: that collapses the root to zero height, and a root with no area
-    never intersects anything.
-  */
-  const active = useInView(ref, { margin: "-49% 0px -49% 0px" })
+  // Lit once it rises past the lower third of the viewport, then stays lit.
+  const active = useInView(ref, { once: true, margin: "0px 0px -33% 0px" })
 
   return (
-    <li
-      ref={ref}
-      className="border-t border-border py-10 md:flex md:min-h-[30svh] md:flex-col md:justify-center md:py-0"
-    >
+    <li ref={ref} className="border-t border-border py-6 sm:py-7">
       <div
         className={cn(
           "grid gap-2 transition-opacity duration-(--motion-cinematic) ease-(--motion-ease-cinematic) motion-reduce:transition-none sm:grid-cols-[11rem_1fr] sm:gap-10",
@@ -95,15 +82,9 @@ function Stage({ index, stage }: { index: number; stage: (typeof STAGES)[number]
   stages. A grid would read as five features you could take in any order, which
   is the one thing this section exists to say they are not.
 
-  The stages stand 30svh apart on desktop, which is the cost of the effect above
-  it: a highlight tracking the reader's position needs somewhere to travel, and
-  five rows that all fit on one screen never dim relative to each other.
-
-  30 and not more. The obvious move is to give each stage half a screen, but
-  each one is six words and a single sentence — at that height the space around
-  them stops reading as composure and starts reading as a section that never
-  got finished. Fora can afford it because their equivalent block is full
-  paragraphs.
+  The stages sit at their natural height. They used to stand 30svh apart so a
+  centre-tracking highlight had room to travel, which made six words a stage
+  the longest section on the page.
 */
 export function Workflow() {
   return (
@@ -116,7 +97,7 @@ export function Workflow() {
             </h2>
           </Reveal>
 
-          <ol className="mt-14">
+          <ol className="mt-10">
             {STAGES.map((stage, index) => (
               <Stage key={stage.name} index={index} stage={stage} />
             ))}

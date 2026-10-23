@@ -78,7 +78,9 @@ export function Hero() {
       <motion.div
         {...rise(0.38)}
         id={SECTIONS.product}
-        className="mt-12 px-[clamp(1.25rem,5vw,3rem)] sm:mt-14"
+        // Not a <section>, so the global section[id] offset misses it — without
+        // this the fixed nav sits over the top of the screenshot.
+        className="mt-12 scroll-mt-[90px] px-[clamp(1.25rem,5vw,3rem)] sm:mt-14"
       >
         <div className="hero-stage">
           <ProductPreview />

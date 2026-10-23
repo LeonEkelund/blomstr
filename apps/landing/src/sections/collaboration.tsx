@@ -44,7 +44,7 @@ export function Collaboration() {
       className="border-t border-border pt-16 pb-24 sm:pt-20 sm:pb-32"
     >
       <div className="shell">
-        <div className="grid gap-12 md:grid-cols-12">
+        <div className="grid gap-8 md:grid-cols-12 md:gap-12">
           <Reveal className="md:col-span-5">
             <h2 className="display text-[clamp(2rem,4.4vw,3rem)]">
               Everyone sees what they need. Nothing gets lost.
@@ -62,10 +62,13 @@ export function Collaboration() {
                   as="li"
                   key={role.name}
                   delay={index * 0.06}
-                  className="py-5 first:pt-0 last:pb-0"
+                  className="py-3.5 first:pt-0 last:pb-0 sm:py-5"
                 >
-                  <div className="flex items-start gap-4">
-                    <Avatar name={role.person} className="mt-0.5 size-8 ring-0" />
+                  <div className="flex items-start gap-3 sm:gap-4">
+                    <Avatar
+                      name={role.person}
+                      className="mt-0.5 size-7 ring-0 sm:size-8"
+                    />
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-[0.9375rem] font-medium">
@@ -75,7 +78,7 @@ export function Collaboration() {
                           {role.name}
                         </Badge>
                       </div>
-                      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                      <p className="mt-0.5 text-sm leading-snug text-muted-foreground sm:mt-1 sm:leading-relaxed">
                         {role.responsibility}
                       </p>
                     </div>
